@@ -309,7 +309,7 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fo
 <img src="https://github.com/dharani25007-code.png" width="100" style="border-radius:50%"/>
 
 ### Dharanidharan M
-**AIDS Student · Karunya University · 1st Year**
+
 
 *Building things that matter, one commit at a time.*
 
