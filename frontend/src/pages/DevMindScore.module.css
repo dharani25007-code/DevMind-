@@ -1,0 +1,194 @@
+.page { padding: 2rem 2.5rem 4rem; max-width: 900px; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 2rem; }
+.titleRow { display: flex; align-items: center; gap: 14px; }
+.icon { font-size: 2rem; color: var(--score); }
+.title { font-size: 1.8rem; font-weight: 700; color: var(--text); }
+.sub { font-size: .9rem; color: var(--text2); margin-top: 2px; }
+
+.refreshBtn {
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  font-size: .82rem;
+  transition: all .15s;
+}
+.refreshBtn:hover { border-color: var(--border3); color: var(--text); }
+
+.loadingWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem;
+  color: var(--text2);
+  font-size: .9rem;
+}
+
+.scoreHero {
+  background: var(--card);
+  border: 1px solid var(--score-bd);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.bigScore { display: flex; align-items: baseline; gap: 6px; }
+.scoreNum {
+  font-size: 4rem;
+  font-weight: 700;
+  color: var(--score);
+  line-height: 1;
+}
+.scoreMax { font-size: 1.5rem; color: var(--text3); }
+
+.scoreRight { flex: 1; min-width: 200px; }
+
+.levelRow { display: flex; gap: 6px; margin-bottom: .6rem; flex-wrap: wrap; }
+.levelStep {
+  font-size: .7rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  color: var(--text3);
+  background: var(--bg3);
+}
+.levelActive { background: var(--score-bg) !important; border-color: var(--score-bd) !important; color: var(--score) !important; }
+
+.levelBar {
+  width: 100%;
+  height: 4px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: .5rem;
+}
+.levelFill {
+  height: 100%;
+  background: var(--score);
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+.sessionsLabel { font-size: .78rem; color: var(--text3); }
+
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.toolCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: border-color .15s;
+}
+.toolCard:hover { border-color: color-mix(in srgb, var(--tc) 30%, transparent); }
+
+.toolTop { display: flex; align-items: center; gap: 8px; margin-bottom: .75rem; }
+.toolIcon { font-size: 1.1rem; color: var(--tc); }
+.toolLabel { font-size: .8rem; font-weight: 600; color: var(--text2); }
+.toolSessions { font-size: 2.2rem; font-weight: 700; color: var(--tc); line-height: 1; }
+.toolSubLabel { font-size: .72rem; color: var(--text3); margin-bottom: .6rem; }
+.toolBar { height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+.toolBarFill { height: 100%; background: var(--tc); border-radius: 2px; transition: width 1s ease; }
+
+.section { margin-bottom: 2rem; }
+.sectionLabel {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .75rem;
+}
+
+.recList { display: flex; flex-direction: column; gap: .75rem; }
+.recCard {
+  background: var(--card);
+  border: 1px solid var(--score-bd);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+}
+.recFlow { display: flex; align-items: center; gap: 8px; margin-bottom: .5rem; }
+.recFrom { font-size: .78rem; color: var(--text2); }
+.recArrow { color: var(--score); }
+.recTo { font-size: .78rem; font-weight: 600; color: var(--score); }
+.recMsg { font-size: .85rem; color: var(--text2); line-height: 1.6; margin-bottom: .75rem; }
+.recBtn {
+  font-size: .78rem;
+  padding: 5px 14px;
+  border-radius: 99px;
+  background: var(--score-bg);
+  border: 1px solid var(--score-bd);
+  color: var(--score);
+  transition: all .15s;
+}
+.recBtn:hover { background: rgba(245,158,11,.15); }
+
+.skillsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .75rem; }
+.skillCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .85rem;
+}
+.skillTop { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: .5rem; }
+.skillConcept { font-size: .82rem; font-weight: 600; color: var(--text); }
+.skillIcon { font-size: .9rem; }
+.skillBar { height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; margin-bottom: .4rem; }
+.skillFill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+.skillMeta { display: flex; justify-content: space-between; font-size: .7rem; color: var(--text3); }
+
+.activityList { display: flex; flex-direction: column; gap: 2px; }
+.actItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.actIcon { font-size: .9rem; width: 20px; text-align: center; }
+.actConcept { flex: 1; font-size: .83rem; color: var(--text); }
+.actTool { font-size: .72rem; font-weight: 600; }
+.actScore { font-family: 'JetBrains Mono', monospace; font-size: .75rem; color: var(--text3); }
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.emptyIcon { font-size: 3rem; color: var(--text3); margin-bottom: 1rem; }
+.emptyState h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: .5rem; }
+.emptyState p { font-size: .88rem; color: var(--text2); line-height: 1.6; margin-bottom: 1.5rem; }
+.emptyBtns { display: flex; gap: 10px; justify-content: center; }
+.emptyBtns button {
+  padding: 9px 20px;
+  border-radius: var(--radius);
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-size: .85rem;
+  font-weight: 500;
+  transition: all .15s;
+}
+.emptyBtns button:hover { border-color: var(--score-bd); color: var(--score); }
+
+@media (max-width: 600px) {
+  .page { padding: 1.5rem; }
+  .toolGrid { grid-template-columns: 1fr; }
+  .scoreHero { flex-direction: column; gap: 1rem; }
+}

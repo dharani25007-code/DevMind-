@@ -1,0 +1,170 @@
+.page { padding: 2rem 2.5rem 4rem; max-width: 1000px; }
+.header { margin-bottom: 2rem; }
+.titleRow { display: flex; align-items: center; gap: 14px; }
+.icon { font-size: 2rem; color: var(--dsa); }
+.title { font-size: 1.8rem; font-weight: 700; color: var(--text); }
+.sub { font-size: .9rem; color: var(--text2); margin-top: 2px; }
+
+.controls {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.algoGrid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+.algoBtn {
+  padding: 6px 14px;
+  border-radius: 99px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-size: .82rem;
+  transition: all .15s;
+}
+.algoBtn:hover:not(:disabled) { border-color: var(--dsa-bd); color: var(--dsa); }
+.algoBtn:disabled { opacity: .4; cursor: not-allowed; }
+.algoActive { background: var(--dsa-bg) !important; border-color: var(--dsa-bd) !important; color: var(--dsa) !important; }
+
+.actionRow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.speedWrap { display: flex; align-items: center; gap: 8px; flex: 1; }
+.speedLabel { font-size: .75rem; color: var(--text3); white-space: nowrap; }
+.slider { flex: 1; max-width: 140px; }
+
+.resetBtn {
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  font-size: .82rem;
+  transition: all .15s;
+}
+.resetBtn:hover:not(:disabled) { border-color: var(--border3); color: var(--text); }
+.resetBtn:disabled { opacity: .4; cursor: not-allowed; }
+
+.runBtn {
+  padding: 8px 22px;
+  border-radius: var(--radius);
+  background: var(--dsa);
+  color: #000;
+  font-size: .85rem;
+  font-weight: 700;
+  transition: opacity .15s;
+}
+.runBtn:hover { opacity: .85; }
+.runBtnStop { background: var(--red); color: white; }
+
+.overviewCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.overviewRow { display: flex; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap; }
+.overviewMain { flex: 1; min-width: 200px; }
+.ovLabel { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dsa); display: block; margin-bottom: .35rem; }
+.ovDesc { font-size: .85rem; color: var(--text2); line-height: 1.6; margin-bottom: 1rem; }
+
+.theoryBox { display: flex; align-items: center; gap: 8px; font-size: .82rem; }
+.theoryLabel { font-weight: 600; color: var(--dsa); }
+.theoryVal { color: var(--text3); }
+
+.useCases { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.useCasesLabel { display: block; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--dsa); margin-bottom: .5rem; }
+.useCasesList { margin: 0; padding-left: 1.25rem; font-size: .85rem; color: var(--text2); line-height: 1.6; }
+.useCasesList li { margin-bottom: .25rem; }
+
+.complexityGrid { display: flex; gap: 8px; flex-wrap: wrap; }
+.complexBox {
+  background: var(--bg3);
+  border-radius: var(--radius);
+  padding: .5rem .75rem;
+  text-align: center;
+  min-width: 60px;
+}
+.complexLabel { display: block; font-size: .65rem; color: var(--text3); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .06em; }
+.complexVal { font-family: 'JetBrains Mono', monospace; font-size: .78rem; color: var(--dsa); font-weight: 600; }
+
+.vizCard {
+  background: var(--card);
+  border: 1px solid var(--dsa-bd);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.vizHeader { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.vizLabel { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dsa); }
+.legend { display: flex; gap: 12px; flex: 1; }
+.legendItem { display: flex; align-items: center; gap: 5px; font-size: .72rem; color: var(--text2); }
+.legendDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.stepCount { font-family: 'JetBrains Mono', monospace; font-size: .78rem; color: var(--text3); }
+
+.barsWrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  height: 200px;
+  padding: 0 .5rem;
+}
+.barCol { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; max-width: 36px; }
+.bar {
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  transition: height .15s, background .15s;
+  min-height: 4px;
+}
+.barVal { font-size: .62rem; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+
+.doneMsg {
+  text-align: center;
+  margin-top: .75rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--dsa);
+}
+
+.narrationCard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+}
+.narHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; }
+.narLabel { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dsa); }
+.speakBtn {
+  font-size: .75rem;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: var(--dsa-bg);
+  border: 1px solid var(--dsa-bd);
+  color: var(--dsa);
+  transition: all .15s;
+}
+.speakBtn:hover { background: rgba(52,211,153,.15); }
+
+.narMain { font-size: .9rem; color: var(--text2); line-height: 1.7; margin-bottom: .75rem; }
+
+.insightBox {
+  background: var(--dsa-bg);
+  border: 1px solid var(--dsa-bd);
+  border-radius: var(--radius);
+  padding: .75rem 1rem;
+  margin-bottom: .75rem;
+}
+.insightLabel { display: block; font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dsa); margin-bottom: .3rem; }
+.insightBox p { font-size: .85rem; color: var(--text2); line-height: 1.5; }
+
+.innerInsights { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: .75rem; }
+@media (max-width: 768px) { .innerInsights { grid-template-columns: 1fr; } }
+
+.complexityNote { font-size: .82rem; color: var(--text3); margin-bottom: .75rem; padding: 8px 12px; background: var(--bg3); border-radius: var(--radius); }
+
+.nextHint { font-size: .82rem; color: var(--text3); font-style: italic; }
+
+@media (max-width: 600px) {
+  .page { padding: 1.5rem; }
+}

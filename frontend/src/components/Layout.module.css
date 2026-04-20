@@ -1,0 +1,109 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 220px;
+  min-height: 100vh;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2rem;
+  padding: 0 .5rem;
+}
+
+.brandIcon {
+  font-size: 1.4rem;
+  color: var(--sql);
+}
+
+.brandName {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--text);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--text2);
+  text-decoration: none;
+  transition: all .15s;
+  border: 1px solid transparent;
+}
+
+.navItem:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+.navItem.active.sql   { background: var(--sql-bg);   border-color: var(--sql-bd);   color: var(--sql);   }
+.navItem.active.git   { background: var(--git-bg);   border-color: var(--git-bd);   color: var(--git);   }
+.navItem.active.dsa   { background: var(--dsa-bg);   border-color: var(--dsa-bd);   color: var(--dsa);   }
+.navItem.active.score { background: var(--score-bg); border-color: var(--score-bd); color: var(--score); }
+.navItem.active.text  { background: var(--bg3);      border-color: var(--border2);  color: var(--text);  }
+
+.navIcon { font-size: 1rem; width: 20px; text-align: center; }
+.navLabel { font-size: .875rem; }
+
+.sidebarFooter {
+  padding: .5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.version {
+  font-size: .72rem;
+  color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.main {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .shell { flex-direction: column; }
+  .sidebar {
+    width: 100%;
+    min-height: auto;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    padding: .75rem 1rem;
+    overflow-x: auto;
+  }
+  .brand { margin-bottom: 0; margin-right: 1rem; }
+  .nav { flex-direction: row; gap: 4px; }
+  .navLabel { display: none; }
+  .sidebarFooter { display: none; }
+}
