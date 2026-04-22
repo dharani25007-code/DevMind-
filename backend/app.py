@@ -39,7 +39,7 @@ init_db()
 def groq_chat(messages, max_tokens=1024, temperature=0.2):
     # Add system-level constraint if not present
     if not any(m.get("role") == "system" for m in messages):
-        messages.insert(0, {"role": "system", "content": "You are a senior technical architect and specialized AI tutor. Your responses must be highly detailed, technically accurate, and provide deep conceptual insights. Use professional terminology and real-world analogies. CRITICAL: Your output must be a VALID JSON object. Ensure all brackets, braces, and quotes are perfectly balanced and escaped."})
+        messages.insert(0, {"role": "system", "content": "You are a senior technical architect and specialized AI tutor. Your responses must be highly detailed, technically accurate, and provide deep conceptual insights. Use professional terminology and real-world analogies. CRITICAL: Your output MUST be ONLY a valid JSON object, nothing else. Ensure all brackets, braces, and quotes are perfectly balanced and escaped. Do not include any markdown, code blocks, or text outside the JSON."})
 
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -58,10 +58,6 @@ def parse_json(text):
         # cleanup markdown blocks
         clean = re.sub(r"```json|```", "", text).strip()
         
-        # fix literal newlines in strings before finding bounds
-        # this is tricky but sometimes models put real newlines inside "..."
-        # we try to replace them with \n
-        
         # find the first { and last }
         start = clean.find('{')
         end = clean.rfind('}')
@@ -70,24 +66,77 @@ def parse_json(text):
 
         # try to parse
         return json.loads(clean, strict=False)
-    except Exception as e:
-        # attempt basic repair for missing closing braces
-        if 'Expecting' in str(e) or 'Unterminated' in str(e):
-            try:
-                repaired = clean
-                if not repaired.endswith('}'): repaired += '}'
-                return json.loads(repaired, strict=False)
-            except: pass
+    except json.JSONDecodeError as e:
+        # Strategy 1: Replace literal newlines inside quoted strings
+        try:
+            # Use regex to find strings and replace internal newlines with spaces
+            def replace_internal_newlines(match):
+                s = match.group(0)
+                # Replace newlines with space, preserving escaped quotes
+                s = s.replace('\n', ' ').replace('\r', ' ')
+                return s
+            
+            # Find all quoted strings and replace newlines within them
+            clean_v2 = re.sub(r'"[^"]*"', replace_internal_newlines, clean)
+            result = json.loads(clean_v2, strict=False)
+            return result
+        except:
+            pass
         
-        print(f"DEBUG: JSON Parse Error at line/col. Full text below:\n{text}\n")
-        print(f"JSON Parse Error: {str(e)}")
-        # fallback for very messy output: try to find anything that looks like a JSON field
-        if '"sql":' in text and '"explanation":' in text:
-            # try a more desperate regex
-            match = re.search(r"(\{.*\})", text, re.DOTALL)
-            if match:
-                try: return json.loads(match.group())
-                except: pass
+        # Strategy 2: Extract just the critical fields using regex
+        try:
+            result = {}
+            
+            # Extract title
+            title_match = re.search(r'"title"\s*:\s*"([^"]*)"', clean)
+            if title_match:
+                result['title'] = title_match.group(1)
+            
+            # Extract tagline
+            tagline_match = re.search(r'"tagline"\s*:\s*"([^"]*)"', clean)
+            if tagline_match:
+                result['tagline'] = tagline_match.group(1)
+            
+            # Extract narration (may have newlines)
+            narration_match = re.search(r'"narration"\s*:\s*"((?:[^"\\]|\\.)*)"', clean, re.DOTALL)
+            if narration_match:
+                narration_text = narration_match.group(1)
+                # Unescape known escape sequences
+                narration_text = narration_text.replace('\\n', '\n').replace('\\r', '\r')
+                result['narration'] = narration_text
+            
+            # Try to extract tech_stack array
+            tech_match = re.search(r'"tech_stack"\s*:\s*\[(.*?)\]', clean, re.DOTALL)
+            if tech_match:
+                tech_text = tech_match.group(1)
+                techs = re.findall(r'"([^"]*)"', tech_text)
+                result['tech_stack'] = techs
+            
+            # Extract architecture
+            arch_match = re.search(r'"architecture"\s*:\s*"((?:[^"\\]|\\.)*)"', clean, re.DOTALL)
+            if arch_match:
+                result['architecture'] = arch_match.group(1).replace('\\n', '\n')
+            
+            # Extract difficulty
+            diff_match = re.search(r'"difficulty"\s*:\s*"([^"]*)"', clean)
+            if diff_match:
+                result['difficulty'] = diff_match.group(1)
+            
+            if result:
+                return result
+        except:
+            pass
+        
+        # Strategy 3: Try fixing missing closing braces
+        try:
+            repaired = clean
+            if not repaired.endswith('}'): repaired += '}'
+            return json.loads(repaired, strict=False)
+        except:
+            pass
+        
+        print(f"DEBUG: JSON Parse Error. Error: {str(e)}")
+        print(f"Full text:\n{text[:1000]}\n...")
         raise e
 
 # ─── SQLLENS ─────────────────────────────────────────────────────────────────
@@ -274,33 +323,28 @@ def gitnarrate_analyze():
         commits = []
 
     # build AI prompt
-    prompt = f"""You are a Lead Software Architect providing a forensic audio walkthrough of a GitHub repository. Your goal is to explain not just WHAT the code does, but WHY it was designed this way.
+    prompt = f"""You are a Lead Software Architect providing a technical analysis of a GitHub repository.
 
 Repository: {owner}/{repo}
 Description: {repo_info.get('description', 'No description')}
 Primary Language: {repo_info.get('language', 'Unknown')}
 Stats: {repo_info.get('stargazers_count', 0)} stars, {repo_info.get('forks_count', 0)} forks
 
-README Insights:
-{readme_text[:2500]}
+README: {readme_text[:2000]}
+Files: {chr(10).join(files[:20])}
+Recent commits: {chr(10).join(commits)}
 
-File Structure Context:
-{chr(10).join(files[:30])}
-
-Recent development activity:
-{chr(10).join(commits)}
-
-Return ONLY a JSON object with this EXACT structure:
+RESPOND WITH ONLY VALID JSON. NO OTHER TEXT. Ensure all strings use proper escaping. Return exactly this structure:
 {{
-  "title": "Comprehensive Title",
-  "tagline": "A sophisticated one-sentence value proposition",
-  "narration": "A 350-500 word deeply technical audio script. Structure it as: 1. High-level technical philosophy. 2. Forensic analysis of the core engine/logic. 3. Evaluation of design patterns used. 4. Scaling or performance trade-offs noted. 5. Future-proofing or contribution roadmap. Use a professional, authoritative, yet engaging tone.",
-  "tech_stack": ["comprehensive", "list", "including", "frameworks", "and", "utilities"],
-  "architecture": "A detailed 4-5 sentence architectural breakdown, explaining the interaction between major components and data flow patterns.",
-  "key_files": [{{"path": "path/to/file", "purpose": "In-depth technical role of this file in the overall system architecture"}}],
-  "concepts": ["advanced", "architectural", "and", "programming", "concepts"],
+  "title": "Repository Title",
+  "tagline": "One sentence value proposition",
+  "narration": "A technical 300-word analysis",
+  "tech_stack": ["list", "of", "technologies"],
+  "architecture": "2-3 sentences on architecture",
+  "key_files": [{{"path": "file.py", "purpose": "What it does"}}],
+  "concepts": ["concepts"],
   "difficulty": "Beginner|Intermediate|Advanced",
-  "contribute_tip": "A strategic tip for a senior contributor looking to optimize or refactor a core module."
+  "contribute_tip": "Tip for contributors"
 }}"""
 
     try:
