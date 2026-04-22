@@ -121,7 +121,12 @@ export default function GitNarrate() {
                 ))}
               </div>
             )}
-            <p className={styles.narText}>{result.narration}</p>
+            <ul className={styles.narBulletList}>
+              {result.narration.split('\n\n').filter(p => p.trim()).map((para, i) => {
+                const cleanPara = para.trim().replace(/^\*\*.*?\*\*\n?/gm, '').replace(/^\d+\.\s*/, '').trim()
+                return cleanPara ? <li key={i} className={styles.narBulletItem}>{cleanPara}</li> : null
+              })}
+            </ul>
           </div>
 
           <div className={styles.twoCol}>
