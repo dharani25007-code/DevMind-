@@ -220,9 +220,6 @@ Groq runs **Llama3-8B completely free** at hundreds of tokens per second — fas
 
 ---
 
-## ⚖️ The Innovation — DevMind Score
-
-Unlike isolated learning tools like LeetCode, SQLZoo, or VisuAlgo — DevMind tracks your behaviour **across all three tools** and builds a unified, living skill graph.
 
 
 
