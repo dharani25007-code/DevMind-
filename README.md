@@ -224,20 +224,7 @@ Groq runs **Llama3-8B completely free** at hundreds of tokens per second — fas
 
 Unlike isolated learning tools like LeetCode, SQLZoo, or VisuAlgo — DevMind tracks your behaviour **across all three tools** and builds a unified, living skill graph.
 
-### 🔬 Novel Patent Claims
 
-**Claim 1 — Cross-domain learning signal linking**
-
-> When you struggle with SQL JOINs, DevMind recommends Binary Search Tree visualization because both involve hierarchical data traversal. When you explore a GitHub repo in GitNarrate, it extracts the algorithms used and links them to DSAVisualizer. No prior art exists for this specific cross-tool adaptive linking method as a unified system.
-
-**Claim 2 — State-driven AI narration**
-
-> In DSAVisualizer, AI narration is triggered by the **exact algorithm state at each animation frame** — not pre-written scripts. The AI receives structured JSON state data (current array, step number, comparing indices) and generates real-time commentary. This specific method of coupling live animation state to AI narration is novel.
-
-### 🇮🇳 For Indian Students
-You can file a **provisional patent** at the [Indian Patent Office](https://ipindia.gov.in) for just **₹1,750 as a student**. This gives you 12 months of protection while you develop the full application. File early — your commit history on GitHub serves as timestamped prior art evidence.
-
----
 
 ## 🛠️ Tech Stack
 
