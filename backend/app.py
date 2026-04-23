@@ -389,7 +389,7 @@ Return ONLY a JSON object with this EXACT structure:
 }}"""
 
     try:
-        result = groq_chat([{"role": "user", "content": prompt}], max_tokens=300)
+        result = groq_chat([{"role": "user", "content": prompt}], max_tokens=600)
         parsed = parse_json(result)
 
         track_event("dsa", algorithm, 75)
@@ -403,7 +403,95 @@ def dsa_overview():
     data = request.json
     algorithm = data.get("algorithm", "bubble_sort")
 
-    prompt = f"""You are a Computer Science Professor and Systems Engineer. Provide a comprehensive, high-level overview of the {algorithm} algorithm, focusing on its theoretical foundations and real-world application in enterprise systems.
+    # Map algorithm IDs to human-readable names
+    ALGO_NAMES = {
+        # Sorting
+        "bubble":          "Bubble Sort",
+        "insertion":        "Insertion Sort",
+        "selection":        "Selection Sort",
+        "merge":            "Merge Sort",
+        "quick":            "Quick Sort",
+        "heap":             "Heap Sort",
+        "counting":         "Counting Sort",
+        "radix":            "Radix Sort",
+        "shell":            "Shell Sort",
+        "tim":              "TimSort",
+        "cycle":            "Cycle Sort",
+        # Graph
+        "bfs":              "Breadth-First Search (BFS)",
+        "dfs":              "Depth-First Search (DFS)",
+        "dijkstra":         "Dijkstra's Shortest Path",
+        "bellman":          "Bellman-Ford Algorithm",
+        "astar":            "A* Search Algorithm",
+        "toposort":         "Topological Sort (Kahn's Algorithm)",
+        "prim":             "Prim's Minimum Spanning Tree",
+        "kruskal":          "Kruskal's Minimum Spanning Tree",
+        "floyd":            "Floyd-Warshall All-Pairs Shortest Paths",
+        "tarjan":           "Tarjan's Strongly Connected Components",
+        # Tree
+        "bst_insert":       "Binary Search Tree Insert",
+        "bst_search":       "Binary Search Tree Search",
+        "inorder":          "In-Order Tree Traversal",
+        "preorder":         "Pre-Order Tree Traversal",
+        "postorder":        "Post-Order Tree Traversal",
+        "avl":              "AVL Tree Rotation",
+        "segtree":          "Segment Tree (Range Sum Query)",
+        "fenwick":          "Fenwick Tree / Binary Indexed Tree",
+        "trie":             "Trie (Prefix Tree)",
+        # Linked List
+        "ll_insert":        "Linked List Insert",
+        "ll_delete":        "Linked List Delete",
+        "ll_reverse":       "Linked List Reverse",
+        "ll_cycle":         "Floyd's Cycle Detection (Tortoise & Hare)",
+        "ll_merge":         "Merge Two Sorted Linked Lists",
+        # Dynamic Programming
+        "lcs":              "Longest Common Subsequence (LCS)",
+        "knapsack":         "0/1 Knapsack Problem",
+        "edit_dist":        "Edit Distance (Levenshtein Distance)",
+        "matrix_chain":     "Matrix Chain Multiplication",
+        "lis":              "Longest Increasing Subsequence (LIS)",
+        "coin":             "Coin Change (Minimum Coins)",
+        # Advanced Structures
+        "union_find":       "Union-Find / Disjoint Set Union (DSU)",
+        "hash_chain":       "Hash Table with Chaining",
+        "hash_open":        "Hash Table with Open Addressing (Linear Probing)",
+        "heap_insert":      "Min-Heap Insert",
+        "heap_extract":     "Min-Heap Extract-Min",
+        # Searching
+        "binary_search":    "Binary Search",
+        "jump":             "Jump Search",
+        "exponential":      "Exponential Search",
+        "interpolation":    "Interpolation Search",
+        "kmp":              "KMP String Matching (Knuth-Morris-Pratt)",
+        "rabin_karp":       "Rabin-Karp Rolling Hash String Search",
+        # Sliding Window / Two Pointer
+        "sw_max":           "Sliding Window Maximum (Monotonic Deque)",
+        "sw_sum":           "Sliding Window Sum",
+        "two_sum":          "Two Sum (Two Pointer)",
+        "three_sum":        "3Sum (Three Pointer)",
+        # Backtracking / Misc
+        "nqueens":          "N-Queens Backtracking",
+        "huffman":          "Huffman Coding (Greedy Compression)",
+        "monte_carlo":      "Monte Carlo Simulation (Pi Estimation)",
+        "primes_sieve":     "Sieve of Eratosthenes",
+        "gcd_euclid":       "Euclidean GCD Algorithm",
+        "sudoku":           "Sudoku Solver (Backtracking)",
+        "subset_sum":       "Subset Sum (Boolean DP)",
+        # Legacy IDs kept for backwards compatibility
+        "bubble_sort":      "Bubble Sort",
+        "selection_sort":   "Selection Sort",
+        "insertion_sort":   "Insertion Sort",
+        "merge_sort":       "Merge Sort",
+        "quick_sort":       "Quick Sort",
+        "linear_search":    "Linear Search",
+        "binary_search_v1": "Binary Search",
+        "tree_inorder":     "In-Order Tree Traversal",
+        "tree_preorder":    "Pre-Order Tree Traversal",
+        "ll_reverse":       "Linked List Reverse",
+    }
+    algo_name = ALGO_NAMES.get(algorithm, algorithm.replace("_", " ").title())
+
+    prompt = f"""You are a Computer Science Professor and Systems Engineer. Provide a comprehensive, high-level overview of the {algo_name} algorithm, focusing on its theoretical foundations and real-world application in enterprise systems.
 
 Return ONLY a JSON object with this EXACT structure:
 {{
