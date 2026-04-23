@@ -37,7 +37,7 @@
 |---|---|---|---|
 | ◈ | **SQLens** | Type in plain English → get SQL + live visual clause breakdown + run it instantly | `#38bdf8` |
 | ◎ | **GitNarrate** | Paste any GitHub URL → AI generates a podcast-style audio walkthrough of the repo | `#a78bfa` |
-| ⬡ | **DSAVisualizer** | Watch 7 algorithms animate live while AI narrates every single step | `#34d399` |
+| ⬡ | **DSAVisualizer** | Watch 60+ algorithms animate live while AI narrates every single step | `#34d399` |
 | ◆ | **DevMind Score** | Cross-tool skill graph — tracks your progress across all 3 tools and recommends what to learn next | `#f59e0b` |
 
 </div>
@@ -73,7 +73,7 @@
 <td width="50%">
 
 ### ⬡ DSAVisualizer
-- 🎬 7 algorithms: Bubble, Selection, Insertion, Merge, Quick Sort + Linear & Binary Search
+- 🎬 60+ algorithms spanning Sorting, Graphs, Trees, DP, Strings, and Advanced Data Structures
 - 🌈 Color-coded live bar chart animation
 - ⚡ Speed control slider (slow to blazing fast)
 - 🤖 AI narration at each step in plain English
@@ -265,11 +265,11 @@ You can file a **provisional patent** at the [Indian Patent Office](https://ipin
 
 - [x] SQLens — NL to SQL with clause explainer
 - [x] GitNarrate — repo audio walkthrough
-- [x] DSAVisualizer — 7 algorithms with AI narration
+- [x] DSAVisualizer — 60+ algorithms with AI narration
 - [x] DevMind Score — cross-tool adaptive engine
 - [ ] Merge Sort + Quick Sort full step visualization
 - [ ] User accounts + persistent score history across sessions
-- [ ] More algorithms: Dijkstra, BFS, DFS, Heap Sort
+- [x] More algorithms: Dijkstra, BFS, DFS, Heap Sort, DP, Tree Traversal and more
 - [ ] SQL challenge mode with scoring and leaderboard
 - [ ] Export DevMind Score as shareable PDF report
 - [ ] Mobile responsive layout improvements
