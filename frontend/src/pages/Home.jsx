@@ -102,16 +102,7 @@ export default function Home() {
             <div className={styles.toolCta}>Open {t.name} →</div>
           </div>
         ))}
-      </div>
 
-      <div className={styles.patentSection}>
-        <div className={styles.patentBadge}>⚖️ Innovation</div>
-        <h3 className={styles.patentTitle}>The DevMind Score — cross-tool adaptive learning</h3>
-        <p className={styles.patentDesc}>
-          Unlike isolated learning tools, DevMind watches your behaviour across SQLens, GitNarrate, and DSAVisualizer
-          to build a unified skill graph. When you struggle with SQL JOINs, it suggests the Binary Search Tree
-          visualization. When you explore a repo, it links to the algorithms inside it. No other platform does this.
-        </p>
       </div>
     </div>
   )
