@@ -83,11 +83,11 @@
 <td width="50%">
 
 ### ◆ DevMind Score ⚖️ Patent Pending
-- 🧠 Tracks every interaction across all 3 tools
-- 🗺️ Per-concept skill scoring with progress bars
-- 🔗 Cross-tool recommendations (unique innovation)
-- 🏆 Level progression: Beginner → Expert
-- 📈 Recent activity feed + session history
+- 🧠 **Cross-Tool Skill Map:** Tracks every interaction across SQLens, GitNarrate, and DSAVisualizer.
+- 🏆 **Level Progression:** Dynamic scoring out of 100 with leveling (Beginner → Intermediate → Advanced → Expert).
+- 🔗 **Smart Recommendations:** Context-aware suggestions that bridge concepts across different tools.
+- 🗺️ **Concept Mastery:** Granular tracking of skill percentages and attempt counts per concept.
+- 📈 **Activity Dashboard:** Beautiful, responsive UI displaying recent activity feeds and session history.
 
 </td>
 </tr>
