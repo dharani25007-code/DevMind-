@@ -33,7 +33,7 @@ export default function Layout({ children }) {
           ))}
         </nav>
         <div className={styles.sidebarFooter}>
-          <span className={styles.version}>v1.0 · Free Groq API</span>
+          <span className={styles.version}>Feel Free to Learn and Explore. </span>
         </div>
       </aside>
       <main className={styles.main}>
