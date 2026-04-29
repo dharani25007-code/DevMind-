@@ -43,7 +43,7 @@ export default function DevMindScore() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.titleRow}>
-          <span className={styles.icon}>◆</span>
+          <span className={styles.icon}>✧</span>
           <div>
             <h1 className={styles.title}>DevMind Score</h1>
             <p className={styles.sub}>Your cross-tool adaptive skill map</p>
