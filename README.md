@@ -218,11 +218,6 @@ npm run dev
 
 Groq runs **Llama3-8B completely free** at hundreds of tokens per second — faster than OpenAI GPT-4.
 
----
-
-
-
-
 ## 🛠️ Tech Stack
 
 <div align="center">
@@ -251,12 +246,12 @@ Groq runs **Llama3-8B completely free** at hundreds of tokens per second — fas
 - [x] GitNarrate — repo audio walkthrough
 - [x] DSAVisualizer — 60+ algorithms with AI narration
 - [x] DevMind Score — cross-tool adaptive engine
-- [ ] Merge Sort + Quick Sort full step visualization
+- [x] Merge Sort + Quick Sort full step visualization
 - [ ] User accounts + persistent score history across sessions
 - [x] More algorithms: Dijkstra, BFS, DFS, Heap Sort, DP, Tree Traversal and more
 - [ ] SQL challenge mode with scoring and leaderboard
 - [ ] Export DevMind Score as shareable PDF report
-- [ ] Mobile responsive layout improvements
+- [x] Mobile responsive layout improvements
 - [ ] Deploy on Render (backend) + Vercel (frontend) — free tier
 - [ ] Dark/light theme toggle
 
@@ -276,7 +271,7 @@ git push origin feature/your-feature-name
 **Good first issues:**
 - Add a new algorithm to DSAVisualizer
 - Add more SQL example queries to SQLens
-- Improve mobile responsiveness
+- Add Dark/Light theme toggle support
 
 ---
 
