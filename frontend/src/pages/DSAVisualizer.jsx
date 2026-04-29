@@ -525,6 +525,13 @@ const ALGO_EXPLANATIONS = {
     advantages: ['Good average case', 'Multiple pattern matching easy', 'Practical efficiency', 'Hash comparison'],
     disadvantages: ['Hash collision risk', 'O(nm) worst case', 'Random seed dependent']
   },
+  lis: {
+    what: 'Longest Increasing Subsequence (LIS) finds the longest subsequence where each element is strictly greater than the previous, using DP or patience sorting.',
+    where: 'Sequence analysis, bioinformatics, version control, patience sorting, longest chain problems',
+    why: 'Fundamental DP problem, O(n log n) solution with binary search is elegant and efficient',
+    advantages: ['O(n log n) with patience sorting', 'Classic DP problem', 'Many applications', 'Builds understanding of subsequence problems'],
+    disadvantages: ['O(n²) naive DP', 'Finding actual subsequence requires backtracking', 'Not trivial to implement optimally']
+  },
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
@@ -594,9 +601,30 @@ export default function DSAVisualizer() {
   const [sudokuState, setSudokuState] = useState({board:[],solutions:0,attempts:0})
   const [subsetState, setSubsetState] = useState({arr:[],target:0,dp:null,cur:null})
 
+  // Code generation state
+  const [codeLang, setCodeLang] = useState('python')
+  const [codeData, setCodeData] = useState(null)
+  const [codeLoading, setCodeLoading] = useState(false)
+  const [codeCopied, setCodeCopied] = useState(false)
+
+  // Custom user input state
+  const [customInput, setCustomInput] = useState('')
+  const [showCodePanel, setShowCodePanel] = useState(false)
+
+  const LANGUAGES = ['python','javascript','java','c++','c','go','rust','typescript','c#','kotlin','swift','ruby','php']
+
   const stopRef = useRef(false)
   const stepRef = useRef(0)
   const synth = useRef(window.speechSynthesis)
+  const codePanelRef = useRef(null)
+
+  useEffect(() => {
+    if (showCodePanel && codePanelRef.current) {
+      setTimeout(() => {
+        codePanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+    }
+  }, [showCodePanel])
 
   const incStep = () => { stepRef.current++; setStep(stepRef.current) }
   const spd = () => speed
@@ -615,11 +643,34 @@ export default function DSAVisualizer() {
     } catch {}
   }, [])
 
+  const fetchCode = useCallback(async (algoId, lang) => {
+    setCodeLoading(true)
+    setCodeData(null)
+    try {
+      const res = await axios.post('/api/dsa/code', { algorithm: algoId, language: lang })
+      setCodeData(res.data)
+    } catch { setCodeData({ error: 'Code generation failed. Please try again.' }) }
+    setCodeLoading(false)
+  }, [])
+
   useEffect(() => {
     if (!algo) return
     fetchOverview(algo.id)
+    setCodeData(null)
+    setShowCodePanel(false)
+    setCustomInput('')
     reset()
   }, [algo])
+
+  const applyCustomInput = () => {
+    if (!customInput.trim() || !algo) return
+    const nums = customInput.split(/[\s,]+/).map(Number).filter(n => !isNaN(n))
+    if (nums.length === 0) return
+    if (algo.viz === 'bars') {
+      setArr(nums)
+      setHl({})
+    }
+  }
 
   const reset = () => {
     stopRef.current = true
@@ -1075,12 +1126,19 @@ export default function DSAVisualizer() {
 
   // ── RENDERING ──────────────────────────────────────────────────────────────
   const getBarColor = (i) => {
-    if(hl.found?.includes(i))return'var(--dsa)';if(hl.sorted?.includes(i))return'var(--dsa)';
-    if(hl.swapping?.includes(i))return'var(--red)';if(hl.comparing?.includes(i))return'var(--score)';
-    if(hl.pivot?.includes(i))return'var(--git)';if(hl.min?.includes(i))return'var(--git)';
-    if(hl.range?.includes(i))return'rgba(56,189,248,.4)';if(hl.jump?.includes(i))return'var(--sql)';
-    if(hl.key?.includes(i))return'var(--sql)';if(hl.lis?.includes(i))return'var(--sql)';
-    return'rgba(255,255,255,.07)'
+    if(hl.found?.includes(i) || hl.sorted?.includes(i)) return 'linear-gradient(to top, var(--primary), #6ee7b7)';
+    if(hl.swapping?.includes(i)) return 'linear-gradient(to top, var(--danger), #fca5a5)';
+    if(hl.comparing?.includes(i)) return 'linear-gradient(to top, var(--warning), #fde047)';
+    if(hl.pivot?.includes(i) || hl.min?.includes(i)) return 'linear-gradient(to top, var(--accent), #c4b5fd)';
+    if(hl.range?.includes(i)) return 'rgba(56, 189, 248, 0.4)';
+    if(hl.jump?.includes(i) || hl.key?.includes(i) || hl.lis?.includes(i)) return 'var(--secondary)';
+    return 'linear-gradient(to top, rgba(255,255,255,0.05), rgba(255,255,255,0.15))';
+  }
+  const getBarGlow = (i) => {
+    if(hl.found?.includes(i) || hl.sorted?.includes(i)) return '0 0 15px var(--primary-glow)';
+    if(hl.swapping?.includes(i)) return '0 0 20px rgba(248, 113, 113, 0.4)';
+    if(hl.comparing?.includes(i)) return '0 0 15px rgba(251, 191, 36, 0.3)';
+    return 'none';
   }
   const getNodeColor = (id) => {
     if(id===gState.current)return'var(--score)';if(gState.path?.includes(id))return'var(--dsa)';
@@ -1137,24 +1195,43 @@ export default function DSAVisualizer() {
           {algo && (
             <>
               {/* Controls */}
-              <div className={styles.controls}>
+              <div className={styles.controls} style={{'--gc':accentColor}}>
                 <div className={styles.algoTitle} style={{color:accentColor}}>{algo.name}</div>
                 <div className={styles.complexRow}>
-                  <span className={styles.badge} style={{background:`${accentColor}18`,color:accentColor,border:`1px solid ${accentColor}40`}}>T: {algo.tc}</span>
-                  <span className={styles.badge} style={{background:'rgba(255,255,255,.05)',color:'var(--text2)',border:'1px solid rgba(255,255,255,.1)'}}>S: {algo.sc}</span>
+                  <span className={styles.badge} style={{background:`${accentColor}18`,color:accentColor,border:`1px solid ${accentColor}40`}}>⏱ {algo.tc}</span>
+                  <span className={styles.badge} style={{background:'rgba(255,255,255,.05)',color:'var(--text2)',border:'1px solid rgba(255,255,255,.1)'}}>📦 {algo.sc}</span>
+                  <span className={styles.badge} style={{background:'rgba(255,255,255,.03)',color:'var(--text3)',border:'1px solid rgba(255,255,255,.06)',fontSize:'.65rem'}}>{algo.desc}</span>
                 </div>
                 <div className={styles.actionRow}>
-                  <div className={styles.speedWrap}><span className={styles.speedLabel}>Speed</span>
+                  <div className={styles.speedWrap}><span className={styles.speedLabel}>⚡ Speed</span>
                     <input type="range" min="50" max="900" step="50" value={900-speed+50} onChange={e=>setSpeed(900-Number(e.target.value)+50)} className={styles.slider} disabled={running}/>
                   </div>
                   <button className={styles.resetBtn} onClick={reset} disabled={running}>↺ Reset</button>
-                  <button className={styles.resetBtn} onClick={()=>setShowExplanation(true)} disabled={running} style={{background:'rgba(52,211,153,.15)',color:'var(--dsa)',border:'1px solid rgba(52,211,153,.4)'}}>📚 Learn</button>
+                  <button className={styles.resetBtn} onClick={()=>setShowExplanation(true)} disabled={running} style={{background:'rgba(52,211,153,.12)',color:'var(--dsa)',border:'1px solid rgba(52,211,153,.3)'}}>📚 Learn</button>
+                  <button className={styles.resetBtn} onClick={()=>{setShowCodePanel(!showCodePanel);if(!codeData&&!showCodePanel)fetchCode(algo.id,codeLang)}} disabled={running} style={{borderColor:showCodePanel?'var(--secondary)':'var(--border-light)'}}>
+                    <span style={{fontSize:'1.1rem'}}>{"</>"}</span> Code
+                  </button>
                   <button className={`${styles.runBtn} ${running ? styles.runBtnStop : ''}`} style={running ? {} : {'--gc':accentColor}}
                     onClick={running ? ()=>{stopRef.current=true;setRunning(false)} : runAlgorithm}>
-                    {running ? '⏹ Stop' : '▶ Run'}
+                    {running ? (
+                      <><span style={{fontSize:'1.2rem'}}>⏹</span> Stop</>
+                    ) : (
+                      <><span style={{fontSize:'1.2rem'}}>▶</span> Run Algorithm</>
+                    )}
                   </button>
                 </div>
               </div>
+
+              {/* Custom Input Panel - Now integrated more smoothly */}
+              {algo.viz === 'bars' && !running && (
+                <div className={styles.inputPanel} style={{animationDelay:'0.1s'}}>
+                  <div className={styles.inputRow}>
+                    <span className={styles.inputLabel}>🛠 CUSTOM ARRAY:</span>
+                    <input className={styles.inputField} placeholder="Comma separated values: 5, 12, 8, 32..." value={customInput} onChange={e=>setCustomInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')applyCustomInput()}} />
+                    <button className={styles.applyBtn} onClick={applyCustomInput}>Generate Bars</button>
+                  </div>
+                </div>
+              )}
 
               {/* Visualization */}
               <div className={styles.vizCard} style={{borderColor:`${accentColor}30`}}>
@@ -1163,11 +1240,21 @@ export default function DSAVisualizer() {
                   <span className={styles.stepCount}>Steps: {step}</span>
                 </div>
 
+                {/* Narration inline */}
+                {(hl.narration || gState.nar || segState.nar || fenState.nar || trieState.nar || nqState.nar || huffState.nar || mcState.nar || sieveState.nar || gcdState.nar || strState.nar || dpState.nar || dp1d.nar || subsetState.nar || sudokuState.nar || tpState.nar || swState.nar || treeVis.narration) && (
+                  <div className={styles.narrationBox}>
+                    <div className={styles.narrationIcon}>💡</div>
+                    <div className={styles.narrationText}>
+                      {hl.narration || gState.nar || segState.nar || fenState.nar || trieState.nar || nqState.nar || huffState.nar || mcState.nar || sieveState.nar || gcdState.nar || strState.nar || dpState.nar || dp1d.nar || subsetState.nar || sudokuState.nar || tpState.nar || swState.nar || treeVis.narration}
+                    </div>
+                  </div>
+                )}
+
                 {/* BARS */}
                 {algo.viz === 'bars' && (
                   <div>
                     <div className={styles.barsWrap}>
-                      {arr.map((v,i) => { const mx=Math.max(...arr)||1; return <div key={i} className={styles.bar} style={{height:`${(v/mx)*185}px`,background:getBarColor(i)}}/>})}
+                      {arr.map((v,i) => { const mx=Math.max(...arr)||1; return <div key={i} className={styles.bar} style={{height:`${(v/mx)*210}px`,background:getBarColor(i),boxShadow:getBarGlow(i)}}/>})}
                     </div>
                     <div className={styles.barLabels}>{arr.map((v,i)=><span key={i} className={styles.barLbl}>{v}</span>)}</div>
                     {hl.trail?.length > 0 && <div className={styles.trail}>{hl.trail.map((v,i)=><span key={i} className={styles.trailNode} style={{color:accentColor,borderColor:`${accentColor}40`,background:`${accentColor}10`}}>{v}</span>)}</div>}
@@ -1443,53 +1530,93 @@ export default function DSAVisualizer() {
                     </div>
                   </div>
                   {overview.production_use_cases?.length > 0 && <div className={styles.useCases}><span className={styles.useCasesLabel} style={{color:accentColor}}>Real-world Use:</span><ul className={styles.useCasesList}>{overview.production_use_cases.map((uc,i)=><li key={i}>{uc}</li>)}</ul></div>}
+                  {overview.key_concept && <div style={{marginTop:'.75rem',padding:'.6rem .85rem',borderRadius:'var(--radius)',background:'rgba(52,211,153,.06)',border:'1px solid rgba(52,211,153,.15)',fontSize:'.82rem',color:'var(--dsa)'}}><strong>💡 Key:</strong> {overview.key_concept}</div>}
+                </div>
+              )}
+
+              {/* Code Generation Panel */}
+              {showCodePanel && (
+                <div className={styles.codeCard} ref={codePanelRef}>
+                  <div className={styles.codeHeader}>
+                    <span className={styles.codeLabel} style={{color:'var(--sql)'}}>{'</>'} Algorithm Code</span>
+                    <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
+                      <select className={styles.langSelect} value={codeLang} onChange={e=>{setCodeLang(e.target.value);fetchCode(algo.id,e.target.value)}}>
+                        {LANGUAGES.map(l=><option key={l} value={l}>{l.charAt(0).toUpperCase()+l.slice(1)}</option>)}
+                      </select>
+                      <button className={styles.genBtn} onClick={()=>fetchCode(algo.id,codeLang)} disabled={codeLoading}>
+                        {codeLoading ? '⟳ Generating...' : '🔄 Regenerate'}
+                      </button>
+                    </div>
+                  </div>
+                  {codeLoading && (
+                    <div style={{textAlign:'center',padding:'2rem',color:'var(--text3)'}}>
+                      <div className="spinner" style={{marginBottom:'12px'}}></div>
+                      <div style={{fontSize:'.82rem'}}>Generating {codeLang} code for {algo.name}...</div>
+                    </div>
+                  )}
+                  {codeData && !codeData.error && !codeLoading && (
+                    <div>
+                      {codeData.explanation && <p style={{fontSize:'.82rem',color:'var(--text2)',lineHeight:'1.6',marginBottom:'.75rem'}}>{codeData.explanation}</p>}
+                      <div className={styles.codeBlock}>
+                        <pre>{codeData.code}</pre>
+                      </div>
+                      <div className={styles.codeActions}>
+                        <button className={styles.copyBtn} onClick={()=>{navigator.clipboard.writeText(codeData.code);setCodeCopied(true);setTimeout(()=>setCodeCopied(false),2000)}}>
+                          {codeCopied ? '✓ Copied!' : '📋 Copy Code'}
+                        </button>
+                        {codeData.filename && <span style={{fontSize:'.72rem',color:'var(--text3)',padding:'6px 0'}}>📄 {codeData.filename}</span>}
+                      </div>
+                    </div>
+                  )}
+                  {codeData?.error && !codeLoading && <div style={{color:'var(--red)',fontSize:'.82rem',padding:'1rem'}}>{codeData.error}</div>}
                 </div>
               )}
 
               {/* Explanation Modal */}
               {showExplanation && algo && ALGO_EXPLANATIONS[algo.id] && (
-                <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,.8)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999}}>
-                  <div style={{background:'rgba(15,23,42,.95)',borderRadius:'12px',border:'1px solid rgba(255,255,255,.1)',maxWidth:'700px',maxHeight:'90vh',overflow:'auto',padding:'28px',boxShadow:'0 20px 60px rgba(0,0,0,.6)'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'start',marginBottom:'24px'}}>
+                <div className={styles.modalOverlay} onClick={e=>{if(e.target===e.currentTarget)setShowExplanation(false)}}>
+                  <div className={styles.modalContent}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'start',marginBottom:'28px'}}>
                       <div>
-                        <h2 style={{color:accentColor,fontSize:'28px',fontWeight:'700',margin:0,marginBottom:'8px'}}>{algo.name}</h2>
-                        <p style={{color:'var(--text2)',fontSize:'13px',margin:0}}>Learn before animating</p>
+                        <h2 style={{color:accentColor,fontSize:'1.6rem',fontWeight:'800',margin:0,marginBottom:'6px',letterSpacing:'-0.02em'}}>{algo.name}</h2>
+                        <p style={{color:'var(--text3)',fontSize:'.82rem',margin:0}}>📖 Deep-dive explanation — understand before you animate</p>
                       </div>
-                      <button onClick={()=>setShowExplanation(false)} style={{background:'rgba(255,255,255,.1)',border:'none',color:'var(--text)',cursor:'pointer',fontSize:'18px',width:'32px',height:'32px',borderRadius:'6px',display:'flex',alignItems:'center',justifyContent:'center',transition:'all .2s'}}>✕</button>
+                      <button className={styles.modalClose} onClick={()=>setShowExplanation(false)}>✕</button>
                     </div>
 
-                    <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
-                      <div>
-                        <h3 style={{color:'rgba(52,211,153,.9)',fontSize:'14px',fontWeight:'700',margin:'0 0 10px 0',textTransform:'uppercase',letterSpacing:'0.5px'}}>📖 What is it?</h3>
-                        <p style={{color:'var(--text)',fontSize:'13px',lineHeight:'1.6',margin:0}}>{ALGO_EXPLANATIONS[algo.id].what}</p>
+                    <div style={{display:'flex',flexDirection:'column',gap:'22px'}}>
+                      <div className={styles.modalSection}>
+                        <h3 className={styles.modalSectionTitle} style={{color:'var(--dsa)'}}>📖 What is it?</h3>
+                        <p className={styles.modalText}>{ALGO_EXPLANATIONS[algo.id].what}</p>
                       </div>
 
-                      <div>
-                        <h3 style={{color:'rgba(52,211,153,.9)',fontSize:'14px',fontWeight:'700',margin:'0 0 10px 0',textTransform:'uppercase',letterSpacing:'0.5px'}}>🌍 Where is it used?</h3>
-                        <p style={{color:'var(--text)',fontSize:'13px',lineHeight:'1.6',margin:0}}>{ALGO_EXPLANATIONS[algo.id].where}</p>
+                      <div className={styles.modalSection}>
+                        <h3 className={styles.modalSectionTitle} style={{color:'var(--sql)'}}>🌍 Where is it used?</h3>
+                        <p className={styles.modalText}>{ALGO_EXPLANATIONS[algo.id].where}</p>
                       </div>
 
-                      <div>
-                        <h3 style={{color:'rgba(52,211,153,.9)',fontSize:'14px',fontWeight:'700',margin:'0 0 10px 0',textTransform:'uppercase',letterSpacing:'0.5px'}}>💡 Why is it used?</h3>
-                        <p style={{color:'var(--text)',fontSize:'13px',lineHeight:'1.6',margin:0}}>{ALGO_EXPLANATIONS[algo.id].why}</p>
+                      <div className={styles.modalSection}>
+                        <h3 className={styles.modalSectionTitle} style={{color:'var(--score)'}}>💡 Why use it?</h3>
+                        <p className={styles.modalText}>{ALGO_EXPLANATIONS[algo.id].why}</p>
                       </div>
 
-                      <div>
-                        <h3 style={{color:'rgba(76,175,80,.9)',fontSize:'14px',fontWeight:'700',margin:'0 0 10px 0',textTransform:'uppercase',letterSpacing:'0.5px'}}>✅ Advantages</h3>
-                        <ul style={{margin:0,paddingLeft:'20px',color:'var(--text)',fontSize:'13px',lineHeight:'1.8'}}>
-                          {ALGO_EXPLANATIONS[algo.id].advantages.map((adv,i)=><li key={i}>{adv}</li>)}
-                        </ul>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
+                        <div className={styles.modalSection} style={{background:'rgba(76,175,80,.06)',padding:'14px',borderRadius:'10px',border:'1px solid rgba(76,175,80,.15)'}}>
+                          <h3 className={styles.modalSectionTitle} style={{color:'rgb(76,175,80)',marginBottom:'8px'}}>✅ Advantages</h3>
+                          <ul className={styles.modalList} style={{color:'var(--text2)'}}>
+                            {ALGO_EXPLANATIONS[algo.id].advantages.map((adv,i)=><li key={i}>{adv}</li>)}
+                          </ul>
+                        </div>
+                        <div className={styles.modalSection} style={{background:'rgba(239,68,68,.06)',padding:'14px',borderRadius:'10px',border:'1px solid rgba(239,68,68,.15)'}}>
+                          <h3 className={styles.modalSectionTitle} style={{color:'rgb(239,68,68)',marginBottom:'8px'}}>❌ Disadvantages</h3>
+                          <ul className={styles.modalList} style={{color:'var(--text2)'}}>
+                            {ALGO_EXPLANATIONS[algo.id].disadvantages.map((d,i)=><li key={i}>{d}</li>)}
+                          </ul>
+                        </div>
                       </div>
 
-                      <div>
-                        <h3 style={{color:'rgba(239,68,68,.9)',fontSize:'14px',fontWeight:'700',margin:'0 0 10px 0',textTransform:'uppercase',letterSpacing:'0.5px'}}>❌ Disadvantages</h3>
-                        <ul style={{margin:0,paddingLeft:'20px',color:'var(--text)',fontSize:'13px',lineHeight:'1.8'}}>
-                          {ALGO_EXPLANATIONS[algo.id].disadvantages.map((disadv,i)=><li key={i}>{disadv}</li>)}
-                        </ul>
-                      </div>
-
-                      <div style={{display:'flex',gap:'12px',marginTop:'12px'}}>
-                        <button onClick={()=>setShowExplanation(false)} style={{flex:1,padding:'10px 16px',background:'rgba(52,211,153,.15)',color:'var(--dsa)',border:'1px solid rgba(52,211,153,.4)',borderRadius:'6px',fontSize:'13px',fontWeight:'700',cursor:'pointer',transition:'all .2s'}} onHover={function(e){e.target.style.background='rgba(52,211,153,.25)'}}>✓ Got it, Start Animation</button>
+                      <div style={{display:'flex',gap:'10px',paddingTop:'8px',borderTop:'1px solid rgba(255,255,255,.06)'}}>
+                        <button className={styles.modalCTA} onClick={()=>setShowExplanation(false)}>✓ Got it — Start Visualizing</button>
                       </div>
                     </div>
                   </div>
@@ -1501,4 +1628,4 @@ export default function DSAVisualizer() {
       </div>
     </div>
   )
-}
+}
