@@ -47,7 +47,7 @@ def groq_chat(messages, max_tokens=1024, temperature=0.2):
     }
     payload = {"model": MODEL, "messages": messages,
                 "max_tokens": max_tokens, "temperature": temperature}
-    res = requests.post(GROQ_URL, headers=headers, json=payload, timeout=30)
+    res = requests.post(GROQ_URL, headers=headers, json=payload, timeout=60)
     if res.status_code != 200:
         print(f"Groq API Error: {res.status_code} - {res.text}")
     res.raise_for_status()
@@ -169,13 +169,21 @@ Return ONLY a JSON object with this EXACT structure:
 }}
 Include all relevant clauses that appear in the query. Ensure the explanation is technical and precise."""
 
+def difficulty_to_score(diff, base=70):
+    d = str(diff).lower()
+    if "advanced" in d: return 92
+    if "intermediate" in d: return 78
+    if "beginner" in d: return 62
+    return base
+
     try:
         result = groq_chat([{"role": "user", "content": prompt}], max_tokens=2048)
         parsed = parse_json(result)
 
         # track learning event
+        score = difficulty_to_score(parsed.get("difficulty", "Intermediate"), base=70)
         for concept in parsed.get("concepts", []):
-            track_event("sqllens", concept, 70)
+            track_event("sqllens", concept, score)
 
         return jsonify(parsed)
     except Exception as e:
@@ -354,8 +362,9 @@ RESPOND WITH ONLY VALID JSON. NO OTHER TEXT. Ensure all strings use proper escap
         parsed["language"] = repo_info.get("language", "Unknown")
         parsed["repo_url"] = repo_url
 
+        score = difficulty_to_score(parsed.get("difficulty", "Intermediate"), base=65)
         for concept in parsed.get("concepts", []):
-            track_event("gitnarrate", concept, 65)
+            track_event("gitnarrate", concept, score)
 
         return jsonify(parsed)
     except Exception as e:
@@ -368,6 +377,15 @@ RESPOND WITH ONLY VALID JSON. NO OTHER TEXT. Ensure all strings use proper escap
 def dsa_explain():
     data = request.json
     algorithm = data.get("algorithm", "bubble_sort")
+    
+    ALGO_COMPLEXITY_SCORES = {
+        "bubble": 45, "insertion": 48, "selection": 50, "shell": 65, "counting": 68, "radix": 72, "cycle": 75,
+        "merge": 82, "quick": 85, "heap": 88, "tim": 92,
+        "bfs": 75, "dfs": 78, "dijkstra": 95, "bellman": 90, "astar": 98, "toposort": 85, "prim": 92, "kruskal": 92, "floyd": 95, "tarjan": 98,
+        "lcs": 94, "knapsack": 96, "edit_dist": 92, "matrix_chain": 98, "lis": 95, "coin": 88,
+        "nqueens": 95, "huffman": 88, "sudoku": 98, "subset_sum": 94
+    }
+    base_score = ALGO_COMPLEXITY_SCORES.get(algorithm, 70)
     state = data.get("state", {})
     step = data.get("step", 0)
     arr = data.get("array", [])
@@ -392,7 +410,7 @@ Return ONLY a JSON object with this EXACT structure:
         result = groq_chat([{"role": "user", "content": prompt}], max_tokens=600)
         parsed = parse_json(result)
 
-        track_event("dsa", algorithm, 75)
+        track_event("dsa", algorithm, base_score)
         return jsonify(parsed)
     except Exception as e:
         return jsonify({"error": f"DSA explanation failed: {str(e)}"}), 500
@@ -517,6 +535,99 @@ Return ONLY a JSON object with this EXACT structure:
         return jsonify(parse_json(result))
     except Exception as e:
         return jsonify({"error": f"DSA overview failed: {str(e)}"}), 500
+
+
+@app.route("/api/dsa/code", methods=["POST"])
+def dsa_code():
+    data = request.json
+    algorithm = data.get("algorithm", "bubble_sort")
+    language = data.get("language", "python")
+
+    ALGO_NAMES = {
+        "bubble": "Bubble Sort", "insertion": "Insertion Sort", "selection": "Selection Sort",
+        "merge": "Merge Sort", "quick": "Quick Sort", "heap": "Heap Sort",
+        "counting": "Counting Sort", "radix": "Radix Sort", "shell": "Shell Sort",
+        "tim": "TimSort", "cycle": "Cycle Sort",
+        "bfs": "Breadth-First Search", "dfs": "Depth-First Search",
+        "dijkstra": "Dijkstra's Shortest Path", "bellman": "Bellman-Ford",
+        "astar": "A* Search", "toposort": "Topological Sort",
+        "prim": "Prim's MST", "kruskal": "Kruskal's MST",
+        "floyd": "Floyd-Warshall", "tarjan": "Tarjan's SCC",
+        "bst_insert": "BST Insert", "bst_search": "BST Search",
+        "inorder": "In-Order Traversal", "preorder": "Pre-Order Traversal",
+        "postorder": "Post-Order Traversal", "avl": "AVL Tree Rotation",
+        "segtree": "Segment Tree", "fenwick": "Fenwick Tree", "trie": "Trie",
+        "ll_insert": "Linked List Insert", "ll_delete": "Linked List Delete",
+        "ll_reverse": "Linked List Reverse", "ll_cycle": "Floyd's Cycle Detection",
+        "ll_merge": "Merge Sorted Linked Lists",
+        "lcs": "Longest Common Subsequence", "knapsack": "0/1 Knapsack",
+        "edit_dist": "Edit Distance", "matrix_chain": "Matrix Chain Multiplication",
+        "lis": "Longest Increasing Subsequence", "coin": "Coin Change",
+        "union_find": "Union-Find DSU", "hash_chain": "Hash Table Chaining",
+        "hash_open": "Hash Table Open Addressing",
+        "heap_insert": "Min-Heap Insert", "heap_extract": "Min-Heap Extract",
+        "binary_search": "Binary Search", "jump": "Jump Search",
+        "exponential": "Exponential Search", "interpolation": "Interpolation Search",
+        "kmp": "KMP String Matching", "rabin_karp": "Rabin-Karp",
+        "sw_max": "Sliding Window Maximum", "sw_sum": "Sliding Window Sum",
+        "two_sum": "Two Sum", "three_sum": "3Sum",
+        "nqueens": "N-Queens", "huffman": "Huffman Coding",
+        "monte_carlo": "Monte Carlo Pi", "primes_sieve": "Sieve of Eratosthenes",
+        "gcd_euclid": "Euclidean GCD", "sudoku": "Sudoku Solver",
+        "subset_sum": "Subset Sum",
+    }
+    algo_name = ALGO_NAMES.get(algorithm, algorithm.replace("_", " ").title())
+
+    prompt = f"""You are an expert programmer. Write a complete, correct, well-commented implementation of the {algo_name} algorithm in {language}.
+
+Requirements:
+1. The code MUST be 100% correct and runnable
+2. Include detailed inline comments explaining each step
+3. Include a main function or driver code that demonstrates usage with example input/output
+4. Follow best practices and idiomatic style for {language}
+5. Include time and space complexity in comments at the top
+
+Return ONLY a JSON object:
+{{
+  "code": "the complete code as a single string with proper newlines (use \\n for newlines)",
+  "language": "{language}",
+  "filename": "suggested_filename.ext",
+  "explanation": "A 2-3 sentence summary of the implementation approach"
+}}"""
+
+    try:
+        print(f"DEBUG: Generating code for {algorithm} in {language}")
+        result = groq_chat([{"role": "user", "content": prompt}], max_tokens=3500)
+        
+        parsed = {}
+        try:
+            parsed = parse_json(result)
+        except Exception as parse_err:
+            print(f"DEBUG: JSON parse failed, falling back to regex: {str(parse_err)}")
+            # If JSON parsing fails, the model likely just dumped the code or messed up escaping
+            if "```" in result:
+                # Find all code blocks
+                code_blocks = re.findall(r"```(?:\w+)?\n(.*?)```", result, re.DOTALL)
+                if code_blocks:
+                    # Take the largest code block or the last one (often the full implementation)
+                    parsed["code"] = max(code_blocks, key=len)
+                else:
+                    parsed["code"] = result
+            else:
+                parsed["code"] = result
+            
+            parsed["language"] = language
+            parsed["filename"] = f"{algorithm}.{language}"
+            parsed["explanation"] = "Generated code implementation (Fallback parsing)"
+
+        # Final safety check for code field
+        if "code" not in parsed or not parsed["code"]:
+            parsed["code"] = result
+            
+        return jsonify(parsed)
+    except Exception as e:
+        print(f"ERROR: Code generation failed: {str(e)}")
+        return jsonify({"error": f"Code generation failed: {str(e)}"}), 500
 
 
 # ─── DEVMIND SCORE ENGINE ─────────────────────────────────────────────────────
