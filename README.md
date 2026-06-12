@@ -1,5 +1,4 @@
 <div align="center">
-
 <img src="https://capsule-render.vercel.app/api?type=waving&color=38bdf8&height=200&section=header&text=DevMind&fontSize=80&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=AI%20Developer%20Learning%20Platform&descAlignY=60&descAlign=50" width="100%"/>
 
 <br/>
