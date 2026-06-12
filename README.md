@@ -1,6 +1,5 @@
 <div align="center">
 <img src="https://capsule-render.vercel.app/api?type=waving&color=38bdf8&height=200&section=header&text=DevMind&fontSize=80&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=AI%20Developer%20Learning%20Platform&descAlignY=60&descAlign=50" width="100%"/>
-
 <br/>
 
 [![Typing SVG](https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=22&duration=3000&pause=1000&color=38BDF8&center=true&vCenter=true&multiline=true&repeat=true&width=700&height=80&lines=Learn+SQL+with+AI+%E2%97%88+SQLens;Explore+GitHub+Repos+%E2%97%8E+GitNarrate;Master+Algorithms+%E2%AC%A1+DSAVisualizer)](https://git.io/typing-svg)
