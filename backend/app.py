@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests, os, json, re, sqlite3, tempfile
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
@@ -19,15 +20,31 @@ SCORE_DB = "devmind_scores.db"
 def init_db():
     conn = sqlite3.connect(SCORE_DB)
     c = conn.cursor()
+    c.execute("""CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL
+    )""")
+    
+    # Check if events table has user_id, if not migrate
+    c.execute("PRAGMA table_info(events)")
+    cols = [col[1] for col in c.fetchall()]
+    if 'user_id' not in cols:
+        c.execute("DROP TABLE IF EXISTS events")
+        c.execute("DROP TABLE IF EXISTS skill_map")
+        
     c.execute("""CREATE TABLE IF NOT EXISTS events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
         tool TEXT, concept TEXT, score INTEGER,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )""")
     c.execute("""CREATE TABLE IF NOT EXISTS skill_map (
-        concept TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        concept TEXT,
         tool TEXT, attempts INTEGER DEFAULT 0,
-        avg_score REAL DEFAULT 0, last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
+        avg_score REAL DEFAULT 0, last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, concept)
     )""")
     conn.commit()
     conn.close()
@@ -181,9 +198,10 @@ def difficulty_to_score(diff, base=70):
         parsed = parse_json(result)
 
         # track learning event
+        user_id = request.headers.get("X-User-Id")
         score = difficulty_to_score(parsed.get("difficulty", "Intermediate"), base=70)
         for concept in parsed.get("concepts", []):
-            track_event("sqllens", concept, score)
+            track_event(user_id, "sqllens", concept, score)
 
         return jsonify(parsed)
     except Exception as e:
@@ -362,9 +380,10 @@ RESPOND WITH ONLY VALID JSON. NO OTHER TEXT. Ensure all strings use proper escap
         parsed["language"] = repo_info.get("language", "Unknown")
         parsed["repo_url"] = repo_url
 
+        user_id = request.headers.get("X-User-Id")
         score = difficulty_to_score(parsed.get("difficulty", "Intermediate"), base=65)
         for concept in parsed.get("concepts", []):
-            track_event("gitnarrate", concept, score)
+            track_event(user_id, "gitnarrate", concept, score)
 
         return jsonify(parsed)
     except Exception as e:
@@ -410,7 +429,8 @@ Return ONLY a JSON object with this EXACT structure:
         result = groq_chat([{"role": "user", "content": prompt}], max_tokens=600)
         parsed = parse_json(result)
 
-        track_event("dsa", algorithm, base_score)
+        user_id = request.headers.get("X-User-Id")
+        track_event(user_id, "dsa", algorithm, base_score)
         return jsonify(parsed)
     except Exception as e:
         return jsonify({"error": f"DSA explanation failed: {str(e)}"}), 500
@@ -632,34 +652,41 @@ Return ONLY a JSON object:
 
 # ─── DEVMIND SCORE ENGINE ─────────────────────────────────────────────────────
 
-def track_event(tool, concept, score):
+def track_event(user_id, tool, concept, score):
+    if not user_id:
+        return
     try:
         conn = sqlite3.connect(SCORE_DB)
         c = conn.cursor()
-        c.execute("INSERT INTO events (tool, concept, score) VALUES (?,?,?)",
-                  (tool, concept, score))
-        c.execute("""INSERT INTO skill_map (concept, tool, attempts, avg_score)
-                     VALUES (?, ?, 1, ?)
-                     ON CONFLICT(concept) DO UPDATE SET
+        c.execute("INSERT INTO events (user_id, tool, concept, score) VALUES (?,?,?,?)",
+                  (user_id, tool, concept, score))
+        c.execute("""INSERT INTO skill_map (user_id, concept, tool, attempts, avg_score)
+                     VALUES (?, ?, ?, 1, ?)
+                     ON CONFLICT(user_id, concept) DO UPDATE SET
                      attempts = attempts + 1,
                      avg_score = (avg_score * attempts + ?) / (attempts + 1),
                      last_updated = CURRENT_TIMESTAMP""",
-                  (concept, tool, score, score))
+                  (user_id, concept, tool, score, score))
         conn.commit()
         conn.close()
-    except:
-        pass
+    except Exception as e:
+        print(f"Error tracking event: {e}")
 
 
 @app.route("/api/devmind/score", methods=["GET"])
 def devmind_score():
+    user_id = request.headers.get("X-User-Id")
+    if not user_id:
+        return jsonify({"overall_score": 0, "total_sessions": 0, "tool_counts": {},
+                        "skills": [], "recent_activity": [], "recommendations": [],
+                        "level": "Beginner", "error": "Unauthorized"}), 401
     try:
         conn = sqlite3.connect(SCORE_DB)
         c = conn.cursor()
 
-        skills = c.execute("SELECT concept, tool, attempts, avg_score FROM skill_map ORDER BY avg_score DESC").fetchall()
-        events = c.execute("SELECT tool, COUNT(*) as cnt FROM events GROUP BY tool").fetchall()
-        recent = c.execute("SELECT tool, concept, score, timestamp FROM events ORDER BY timestamp DESC LIMIT 10").fetchall()
+        skills = c.execute("SELECT concept, tool, attempts, avg_score FROM skill_map WHERE user_id = ? ORDER BY avg_score DESC", (user_id,)).fetchall()
+        events = c.execute("SELECT tool, COUNT(*) as cnt FROM events WHERE user_id = ? GROUP BY tool", (user_id,)).fetchall()
+        recent = c.execute("SELECT tool, concept, score, timestamp FROM events WHERE user_id = ? ORDER BY timestamp DESC LIMIT 10", (user_id,)).fetchall()
         conn.close()
 
         tool_counts = {row[0]: row[1] for row in events}
@@ -684,6 +711,74 @@ def devmind_score():
         return jsonify({"overall_score": 0, "total_sessions": 0, "tool_counts": {},
                         "skills": [], "recent_activity": [], "recommendations": [],
                         "level": "Beginner", "error": str(e)})
+
+
+# ─── AUTH ENDPOINTS ──────────────────────────────────────────────────────────
+
+@app.route("/api/auth/register", methods=["POST"])
+def auth_register():
+    data = request.json
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+    
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+        
+    try:
+        conn = sqlite3.connect(SCORE_DB)
+        c = conn.cursor()
+        password_hash = generate_password_hash(password)
+        c.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, password_hash))
+        user_id = c.lastrowid
+        conn.commit()
+        conn.close()
+        return jsonify({"user": {"id": user_id, "username": username}})
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Username already exists"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def auth_login():
+    data = request.json
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+    
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+        
+    try:
+        conn = sqlite3.connect(SCORE_DB)
+        c = conn.cursor()
+        row = c.execute("SELECT id, password_hash FROM users WHERE username = ?", (username,)).fetchone()
+        conn.close()
+        
+        if row and check_password_hash(row[1], password):
+            return jsonify({"user": {"id": row[0], "username": username}})
+        else:
+            return jsonify({"error": "Invalid username or password"}), 401
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/auth/delete", methods=["POST"])
+def auth_delete():
+    user_id = request.headers.get("X-User-Id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    try:
+        conn = sqlite3.connect(SCORE_DB)
+        c = conn.cursor()
+        c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        c.execute("DELETE FROM events WHERE user_id = ?", (user_id,))
+        c.execute("DELETE FROM skill_map WHERE user_id = ?", (user_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "Account deleted successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 def build_recommendations(skills):

@@ -412,6 +412,65 @@
   50% { transform: translateY(-10px); }
 }
 
+/* ── EMPTY STATE ─────────────────────────────────────────────────────────── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3.5rem 2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  margin-top: 1.5rem;
+  animation: fadeUp 0.6s ease forwards;
+}
+
+.emptyIcon {
+  font-size: 2.5rem;
+  color: var(--primary);
+  margin-bottom: 1.25rem;
+  filter: drop-shadow(0 0 10px var(--primary-glow));
+}
+
+.emptyState h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.emptyState p {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  max-width: 460px;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.emptyBtns {
+  display: flex;
+  gap: 1rem;
+}
+
+.emptyBtns button {
+  background: var(--bg-glass);
+  color: var(--text-main);
+  border: 1px solid var(--border-light);
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+
+.emptyBtns button:hover {
+  background: var(--border-light);
+  border-color: var(--border-active);
+  transform: translateY(-2px);
+}
+
 @media (max-width: 768px) {
   .page { padding: 1.5rem; }
   .toolGrid { grid-template-columns: 1fr; }
