@@ -2,89 +2,93 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import axios from 'axios'
 import styles from './DSAVisualizer.module.css'
 
-// ── ALGORITHM REGISTRY ───────────────────────────────────────────────────────
+// ── ALGORITHM REGISTRY & SYLLABUS MAPPING ───────────────────────────────────
 const ALGO_GROUPS = [
-  { label: 'Sorting', color: 'var(--dsa)', algos: [
-    { id: 'bubble',    name: 'Bubble Sort',    viz: 'bars', tc: 'O(n²)',       sc: 'O(1)',       desc: 'Compare adjacent pairs, swap if out of order.' },
-    { id: 'insertion', name: 'Insertion Sort', viz: 'bars', tc: 'O(n²)',       sc: 'O(1)',       desc: 'Insert each element into its correct sorted position.' },
-    { id: 'selection', name: 'Selection Sort', viz: 'bars', tc: 'O(n²)',       sc: 'O(1)',       desc: 'Find minimum each pass, place at front.' },
-    { id: 'merge',     name: 'Merge Sort',     viz: 'bars', tc: 'O(n log n)',  sc: 'O(n)',       desc: 'Divide in half, sort recursively, merge.' },
-    { id: 'quick',     name: 'Quick Sort',     viz: 'bars', tc: 'O(n log n)',  sc: 'O(log n)',   desc: 'Partition around pivot, recurse.' },
-    { id: 'heap',      name: 'Heap Sort',      viz: 'bars', tc: 'O(n log n)',  sc: 'O(1)',       desc: 'Build max-heap, extract max repeatedly.' },
-    { id: 'counting',  name: 'Counting Sort',  viz: 'bars', tc: 'O(n+k)',      sc: 'O(k)',       desc: 'Non-comparison — count occurrences, rebuild.' },
-    { id: 'radix',     name: 'Radix Sort',     viz: 'bars', tc: 'O(nk)',       sc: 'O(n+k)',     desc: 'Sort digit-by-digit, LSD to MSD.' },
-    { id: 'shell',     name: 'Shell Sort',     viz: 'bars', tc: 'O(n log² n)', sc: 'O(1)',       desc: 'Insertion sort with decreasing gap sequence.' },
-    { id: 'tim',       name: 'TimSort',        viz: 'bars', tc: 'O(n log n)',  sc: 'O(n)',       desc: 'Hybrid merge+insertion. Used in Python & Java.' },
-    { id: 'cycle',     name: 'Cycle Sort',     viz: 'bars', tc: 'O(n²)',       sc: 'O(1)',       desc: 'Minimum memory-write sort. Optimal for flash storage.' },
+  { label: 'Sorting', color: 'var(--dsa)', unit: 'Unit III', algos: [
+    { id: 'bubble',    name: 'Bubble Sort',    level: 'Beginner',     unit: 'Unit III', viz: 'bars', tc: 'O(n²)',       sc: 'O(1)',       desc: 'Compare adjacent pairs, swap if out of order.' },
+    { id: 'insertion', name: 'Insertion Sort', level: 'Beginner',     unit: 'Unit III', viz: 'bars', tc: 'O(n²)',       sc: 'O(1)',       desc: 'Insert each element into its correct sorted position.' },
+    { id: 'selection', name: 'Selection Sort', level: 'Beginner',     unit: 'Unit III', viz: 'bars', tc: 'O(n²)',       sc: 'O(1)',       desc: 'Find minimum each pass, place at front.' },
+    { id: 'merge',     name: 'Merge Sort',     level: 'Intermediate', unit: 'Unit III', viz: 'bars', tc: 'O(n log n)',  sc: 'O(n)',       desc: 'Divide in half, sort recursively, merge.' },
+    { id: 'quick',     name: 'Quick Sort',     level: 'Intermediate', unit: 'Unit III', viz: 'bars', tc: 'O(n log n)',  sc: 'O(log n)',   desc: 'Partition around pivot, recurse.' },
+    { id: 'heap',      name: 'Heap Sort',      level: 'Advanced',     unit: 'Unit III', viz: 'bars', tc: 'O(n log n)',  sc: 'O(1)',       desc: 'Build max-heap, extract max repeatedly.' },
+    { id: 'counting',  name: 'Counting Sort',  level: 'Intermediate', unit: 'Unit III', viz: 'bars', tc: 'O(n+k)',      sc: 'O(k)',       desc: 'Non-comparison — count occurrences, rebuild.' },
+    { id: 'radix',     name: 'Radix Sort',     level: 'Advanced',     unit: 'Unit III', viz: 'bars', tc: 'O(nk)',       sc: 'O(n+k)',     desc: 'Sort digit-by-digit, LSD to MSD.' },
+    { id: 'shell',     name: 'Shell Sort',     level: 'Intermediate', unit: 'Unit III', viz: 'bars', tc: 'O(n log² n)', sc: 'O(1)',       desc: 'Insertion sort with decreasing gap sequence.' },
+    { id: 'tim',       name: 'TimSort',        level: 'Advanced',     unit: 'Unit III', viz: 'bars', tc: 'O(n log n)',  sc: 'O(n)',       desc: 'Hybrid merge+insertion. Used in Python & Java.' },
+    { id: 'cycle',     name: 'Cycle Sort',     level: 'Advanced',     unit: 'Unit III', viz: 'bars', tc: 'O(n²)',       sc: 'O(1)',       desc: 'Minimum memory-write sort. Optimal for flash storage.' },
   ]},
-  { label: 'Graph', color: 'var(--git)', algos: [
-    { id: 'bfs',       name: 'BFS',            viz: 'graph', tc: 'O(V+E)',         sc: 'O(V)',   desc: 'Level-by-level traversal using a queue.' },
-    { id: 'dfs',       name: 'DFS',            viz: 'graph', tc: 'O(V+E)',         sc: 'O(V)',   desc: 'Deep traversal using a stack or recursion.' },
-    { id: 'dijkstra',  name: 'Dijkstra',       viz: 'graph', tc: 'O((V+E)log V)',  sc: 'O(V)',   desc: 'Greedy shortest path — always expand minimum cost.' },
-    { id: 'bellman',   name: 'Bellman-Ford',   viz: 'graph', tc: 'O(VE)',          sc: 'O(V)',   desc: 'Relax all edges V-1 times. Handles negative weights.' },
-    { id: 'astar',     name: 'A* Search',      viz: 'graph', tc: 'O(E log V)',     sc: 'O(V)',   desc: 'f(n)=g(n)+h(n) guides search toward goal.' },
-    { id: 'toposort',  name: 'Topological Sort',viz:'graph', tc: 'O(V+E)',         sc: 'O(V)',   desc: "Kahn's: process zero-in-degree nodes first." },
-    { id: 'prim',      name: "Prim's MST",     viz: 'graph', tc: 'O(E log V)',     sc: 'O(V)',   desc: 'Grow MST greedily — always add cheapest edge.' },
-    { id: 'kruskal',   name: "Kruskal's MST",  viz: 'graph', tc: 'O(E log E)',     sc: 'O(V)',   desc: 'Sort edges, add if no cycle (Union-Find).' },
-    { id: 'floyd',     name: 'Floyd-Warshall', viz: 'matrix',tc: 'O(V³)',          sc: 'O(V²)',  desc: 'All-pairs shortest paths via DP.' },
-    { id: 'tarjan',    name: "Tarjan's SCC",   viz: 'graph', tc: 'O(V+E)',         sc: 'O(V)',   desc: 'Strongly connected components in one DFS pass.' },
+  { label: 'Graph', color: 'var(--git)', unit: 'Unit V', algos: [
+    { id: 'bfs',       name: 'BFS',            level: 'Beginner',     unit: 'Unit V', viz: 'graph', tc: 'O(V+E)',         sc: 'O(V)',   desc: 'Level-by-level traversal using a queue.' },
+    { id: 'dfs',       name: 'DFS',            level: 'Beginner',     unit: 'Unit V', viz: 'graph', tc: 'O(V+E)',         sc: 'O(V)',   desc: 'Deep traversal using a stack or recursion.' },
+    { id: 'dijkstra',  name: 'Dijkstra',       level: 'Intermediate', unit: 'Unit V', viz: 'graph', tc: 'O((V+E)log V)',  sc: 'O(V)',   desc: 'Greedy shortest path — always expand minimum cost.' },
+    { id: 'bellman',   name: 'Bellman-Ford',   level: 'Advanced',     unit: 'Unit V', viz: 'graph', tc: 'O(VE)',          sc: 'O(V)',   desc: 'Relax all edges V-1 times. Handles negative weights.' },
+    { id: 'astar',     name: 'A* Search',      level: 'Advanced',     unit: 'Unit V', viz: 'graph', tc: 'O(E log V)',     sc: 'O(V)',   desc: 'f(n)=g(n)+h(n) guides search toward goal.' },
+    { id: 'toposort',  name: 'Topological Sort',level:'Intermediate',unit: 'Unit V', viz:'graph', tc: 'O(V+E)',         sc: 'O(V)',   desc: "Kahn's: process zero-in-degree nodes first." },
+    { id: 'prim',      name: "Prim's MST",     level: 'Intermediate', unit: 'Unit V', viz: 'graph', tc: 'O(E log V)',     sc: 'O(V)',   desc: 'Grow MST greedily — always add cheapest edge.' },
+    { id: 'kruskal',   name: "Kruskal's MST",  level: 'Intermediate', unit: 'Unit V', viz: 'graph', tc: 'O(E log E)',     sc: 'O(V)',   desc: 'Sort edges, add if no cycle (Union-Find).' },
+    { id: 'floyd',     name: 'Floyd-Warshall', level: 'Advanced',     unit: 'Unit V', viz: 'matrix',tc: 'O(V³)',          sc: 'O(V²)',  desc: 'All-pairs shortest paths via DP.' },
+    { id: 'tarjan',    name: "Tarjan's SCC",   level: 'Advanced',     unit: 'Unit V', viz: 'graph', tc: 'O(V+E)',         sc: 'O(V)',   desc: 'Strongly connected components in one DFS pass.' },
   ]},
-  { label: 'Tree', color: 'var(--score)', algos: [
-    { id: 'bst_insert',  name: 'BST Insert',    viz: 'tree', tc: 'O(log n)', sc: 'O(1)', desc: 'Navigate left/right, insert at correct leaf.' },
-    { id: 'bst_search',  name: 'BST Search',    viz: 'tree', tc: 'O(log n)', sc: 'O(1)', desc: 'Halve the search space each step.' },
-    { id: 'inorder',     name: 'In-Order',       viz: 'tree', tc: 'O(n)',     sc: 'O(h)', desc: 'Left→Root→Right. Sorted output for BST.' },
-    { id: 'preorder',    name: 'Pre-Order',      viz: 'tree', tc: 'O(n)',     sc: 'O(h)', desc: 'Root→Left→Right. Used for tree cloning.' },
-    { id: 'postorder',   name: 'Post-Order',     viz: 'tree', tc: 'O(n)',     sc: 'O(h)', desc: 'Left→Right→Root. Used for deletion.' },
-    { id: 'avl',         name: 'AVL Rotation',   viz: 'tree', tc: 'O(log n)', sc: 'O(1)', desc: 'Self-balancing BST. Rotate to fix height.' },
-    { id: 'segtree',     name: 'Segment Tree',   viz: 'segtree',tc:'O(log n)',sc: 'O(n)', desc: 'Range query + point update in O(log n).' },
-    { id: 'fenwick',     name: 'Fenwick Tree',   viz: 'fenwick',tc:'O(log n)',sc: 'O(n)', desc: 'Binary Indexed Tree for prefix sums.' },
-    { id: 'trie',        name: 'Trie',           viz: 'trie', tc: 'O(m)',     sc: 'O(m)', desc: 'Prefix tree — each root-to-leaf path is a word.' },
+  { label: 'Tree', color: 'var(--score)', unit: 'Unit IV', algos: [
+    { id: 'bst_insert',  name: 'BST Insert',    level: 'Beginner',     unit: 'Unit IV', viz: 'tree', tc: 'O(log n)', sc: 'O(1)', desc: 'Navigate left/right, insert at correct leaf.' },
+    { id: 'bst_search',  name: 'BST Search',    level: 'Beginner',     unit: 'Unit IV', viz: 'tree', tc: 'O(log n)', sc: 'O(1)', desc: 'Halve the search space each step.' },
+    { id: 'inorder',     name: 'In-Order',       level: 'Beginner',     unit: 'Unit IV', viz: 'tree', tc: 'O(n)',     sc: 'O(h)', desc: 'Left→Root→Right. Sorted output for BST.' },
+    { id: 'preorder',    name: 'Pre-Order',      level: 'Beginner',     unit: 'Unit IV', viz: 'tree', tc: 'O(n)',     sc: 'O(h)', desc: 'Root→Left→Right. Used for tree cloning.' },
+    { id: 'postorder',   name: 'Post-Order',     level: 'Beginner',     unit: 'Unit IV', viz: 'tree', tc: 'O(n)',     sc: 'O(h)', desc: 'Left→Right→Root. Used for deletion.' },
+    { id: 'avl',         name: 'AVL Rotation',   level: 'Advanced',     unit: 'Unit IV', viz: 'tree', tc: 'O(log n)', sc: 'O(1)', desc: 'Self-balancing BST. Rotate to fix height.' },
+    { id: 'segtree',     name: 'Segment Tree',   level: 'Advanced',     unit: 'Unit IV', viz: 'segtree',tc:'O(log n)',sc: 'O(n)', desc: 'Range query + point update in O(log n).' },
+    { id: 'fenwick',     name: 'Fenwick Tree',   level: 'Advanced',     unit: 'Unit IV', viz: 'fenwick',tc:'O(log n)',sc: 'O(n)', desc: 'Binary Indexed Tree for prefix sums.' },
+    { id: 'trie',        name: 'Trie',           level: 'Intermediate', unit: 'Unit IV', viz: 'trie', tc: 'O(m)',     sc: 'O(m)', desc: 'Prefix tree — each root-to-leaf path is a word.' },
   ]},
-  { label: 'Linked List', color: 'var(--red)', algos: [
-    { id: 'll_insert', name: 'LL Insert',       viz: 'll', tc: 'O(1)', sc: 'O(1)', desc: 'Insert at head by rewiring pointers.' },
-    { id: 'll_delete', name: 'LL Delete',       viz: 'll', tc: 'O(n)', sc: 'O(1)', desc: 'Traverse to target, rewire prev.next.' },
-    { id: 'll_reverse',name: 'LL Reverse',      viz: 'll', tc: 'O(n)', sc: 'O(1)', desc: 'Three-pointer in-place reversal.' },
-    { id: 'll_cycle',  name: "Floyd's Cycle",   viz: 'll', tc: 'O(n)', sc: 'O(1)', desc: 'Tortoise & hare — meet in cycle if exists.' },
-    { id: 'll_merge',  name: 'Merge Sorted LLs',viz: 'll', tc: 'O(n+m)',sc:'O(1)', desc: 'Merge two sorted linked lists in-place.' },
+  { label: 'Linked List & Stacks', color: 'var(--red)', unit: 'Unit II', algos: [
+    { id: 'stack_adt', name: 'Stack ADT (Push/Pop)', level: 'Beginner', unit: 'Unit I', viz: 'll', tc: 'O(1)', sc: 'O(n)', desc: 'Last-In First-Out data structure. Push, Pop, Peek.' },
+    { id: 'queue_adt', name: 'Queue ADT (Enqueue/Dequeue)', level: 'Beginner', unit: 'Unit I', viz: 'll', tc: 'O(1)', sc: 'O(n)', desc: 'First-In First-Out data structure. Enqueue, Dequeue.' },
+    { id: 'round_robin', name: 'Round-Robin Circular Queue', level: 'Intermediate', unit: 'Unit I', viz: 'll', tc: 'O(1)', sc: 'O(n)', desc: 'Circular queue for CPU time-slice process scheduling.' },
+    { id: 'll_insert', name: 'LL Insert',       level: 'Beginner',     unit: 'Unit II', viz: 'll', tc: 'O(1)', sc: 'O(1)', desc: 'Insert at head by rewiring pointers.' },
+    { id: 'll_delete', name: 'LL Delete',       level: 'Beginner',     unit: 'Unit II', viz: 'll', tc: 'O(n)', sc: 'O(1)', desc: 'Traverse to target, rewire prev.next.' },
+    { id: 'll_reverse',name: 'LL Reverse',      level: 'Intermediate', unit: 'Unit II', viz: 'll', tc: 'O(n)', sc: 'O(1)', desc: 'Three-pointer in-place reversal.' },
+    { id: 'll_cycle',  name: "Floyd's Cycle",   level: 'Intermediate', unit: 'Unit II', viz: 'll', tc: 'O(n)', sc: 'O(1)', desc: 'Tortoise & hare — meet in cycle if exists.' },
+    { id: 'll_merge',  name: 'Merge Sorted LLs',level: 'Intermediate', unit: 'Unit II', viz: 'll', tc: 'O(n+m)',sc:'O(1)', desc: 'Merge two sorted linked lists in-place.' },
   ]},
-  { label: 'Dynamic Programming', color: 'var(--sql)', algos: [
-    { id: 'lcs',         name: 'LCS',           viz: 'dp',   tc: 'O(mn)',  sc: 'O(mn)', desc: 'Longest Common Subsequence — 2D DP.' },
-    { id: 'knapsack',    name: '0/1 Knapsack',  viz: 'dp',   tc: 'O(nW)',  sc: 'O(nW)', desc: 'Maximize value within weight capacity.' },
-    { id: 'edit_dist',   name: 'Edit Distance', viz: 'dp',   tc: 'O(mn)',  sc: 'O(mn)', desc: 'Levenshtein — min insert/delete/replace ops.' },
-    { id: 'matrix_chain',name: 'Matrix Chain',  viz: 'dp',   tc: 'O(n³)',  sc: 'O(n²)', desc: 'Optimal parenthesization of matrix products.' },
-    { id: 'lis',         name: 'LIS',           viz: 'bars', tc: 'O(n log n)',sc:'O(n)', desc: 'Longest Increasing Subsequence — patience sort.' },
-    { id: 'coin',        name: 'Coin Change',   viz: 'dp1d', tc: 'O(nA)',  sc: 'O(A)',  desc: 'Min coins for amount. Unbounded knapsack.' },
+  { label: 'Dynamic Programming', color: 'var(--sql)', unit: 'Bonus', algos: [
+    { id: 'lcs',         name: 'LCS',           level: 'Intermediate', unit: 'Bonus', viz: 'dp',   tc: 'O(mn)',  sc: 'O(mn)', desc: 'Longest Common Subsequence — 2D DP.' },
+    { id: 'knapsack',    name: '0/1 Knapsack',  level: 'Intermediate', unit: 'Bonus', viz: 'dp',   tc: 'O(nW)',  sc: 'O(nW)', desc: 'Maximize value within weight capacity.' },
+    { id: 'edit_dist',   name: 'Edit Distance', level: 'Advanced',     unit: 'Bonus', viz: 'dp',   tc: 'O(mn)',  sc: 'O(mn)', desc: 'Levenshtein — min insert/delete/replace ops.' },
+    { id: 'matrix_chain',name: 'Matrix Chain',  level: 'Advanced',     unit: 'Bonus', viz: 'dp',   tc: 'O(n³)',  sc: 'O(n²)', desc: 'Optimal parenthesization of matrix products.' },
+    { id: 'lis',         name: 'LIS',           level: 'Intermediate', unit: 'Bonus', viz: 'bars', tc: 'O(n log n)',sc:'O(n)', desc: 'Longest Increasing Subsequence — patience sort.' },
+    { id: 'coin',        name: 'Coin Change',   level: 'Intermediate', unit: 'Bonus', viz: 'dp1d', tc: 'O(nA)',  sc: 'O(A)',  desc: 'Min coins for amount. Unbounded knapsack.' },
   ]},
-  { label: 'Advanced Structures', color: 'var(--git)', algos: [
-    { id: 'union_find',  name: 'Union-Find',    viz: 'uf',      tc: 'O(α(n))', sc: 'O(n)', desc: 'DSU with path compression + union by rank.' },
-    { id: 'hash_chain',  name: 'Hash Chaining', viz: 'hash',    tc: 'O(1) avg',sc: 'O(n)', desc: 'Linked list per bucket resolves collisions.' },
-    { id: 'hash_open',   name: 'Hash Open Addr',viz: 'hash',    tc: 'O(1) avg',sc: 'O(n)', desc: 'Linear probing on collision. Flat table.' },
-    { id: 'heap_insert', name: 'Heap Insert',   viz: 'heapviz', tc: 'O(log n)',sc: 'O(1)', desc: 'Insert at end, bubble up to restore heap.' },
-    { id: 'heap_extract',name: 'Heap Extract',  viz: 'heapviz', tc: 'O(log n)',sc: 'O(1)', desc: 'Swap root+last, remove, sift down.' },
+  { label: 'Advanced Structures', color: 'var(--git)', unit: 'Unit II', algos: [
+    { id: 'union_find',  name: 'Union-Find',    level: 'Intermediate', unit: 'Unit V', viz: 'uf',      tc: 'O(α(n))', sc: 'O(n)', desc: 'DSU with path compression + union by rank.' },
+    { id: 'hash_chain',  name: 'Hash Chaining', level: 'Intermediate', unit: 'Unit II', viz: 'hash',    tc: 'O(1) avg',sc: 'O(n)', desc: 'Linked list per bucket resolves collisions.' },
+    { id: 'hash_open',   name: 'Hash Open Addr',level: 'Intermediate', unit: 'Unit II', viz: 'hash',    tc: 'O(1) avg',sc: 'O(n)', desc: 'Linear probing on collision. Flat table.' },
+    { id: 'heap_insert', name: 'Heap Insert',   level: 'Intermediate', unit: 'Unit IV', viz: 'heapviz', tc: 'O(log n)',sc: 'O(1)', desc: 'Insert at end, bubble up to restore heap.' },
+    { id: 'heap_extract',name: 'Heap Extract',  level: 'Intermediate', unit: 'Unit IV', viz: 'heapviz', tc: 'O(log n)',sc: 'O(1)', desc: 'Swap root+last, remove, sift down.' },
   ]},
-  { label: 'Searching', color: 'var(--score)', algos: [
-    { id: 'binary_search',    name: 'Binary Search',     viz: 'bars',  tc: 'O(log n)',    sc: 'O(1)', desc: 'Eliminate half the space each step.' },
-    { id: 'jump',             name: 'Jump Search',       viz: 'bars',  tc: 'O(√n)',       sc: 'O(1)', desc: 'Jump √n steps, linear scan back.' },
-    { id: 'exponential',      name: 'Exponential Search',viz: 'bars',  tc: 'O(log n)',    sc: 'O(1)', desc: 'Double range until exceeded, then binary.' },
-    { id: 'interpolation',    name: 'Interpolation',     viz: 'bars',  tc: 'O(log log n)',sc: 'O(1)', desc: 'Probe by value interpolation. Best on uniform data.' },
-    { id: 'kmp',              name: 'KMP',               viz: 'string',tc: 'O(n+m)',      sc: 'O(m)', desc: 'Failure function avoids redundant comparisons.' },
-    { id: 'rabin_karp',       name: 'Rabin-Karp',        viz: 'string',tc: 'O(nm)',       sc: 'O(1)', desc: 'Rolling hash — compare hash first, then chars.' },
+  { label: 'Searching', color: 'var(--score)', unit: 'Unit III', algos: [
+    { id: 'binary_search',    name: 'Binary Search',     level: 'Beginner',     unit: 'Unit III', viz: 'bars',  tc: 'O(log n)',    sc: 'O(1)', desc: 'Eliminate half the space each step.' },
+    { id: 'jump',             name: 'Jump Search',       level: 'Beginner',     unit: 'Unit III', viz: 'bars',  tc: 'O(√n)',       sc: 'O(1)', desc: 'Jump √n steps, linear scan back.' },
+    { id: 'exponential',      name: 'Exponential Search',level: 'Intermediate', unit: 'Unit III', viz: 'bars',  tc: 'O(log n)',    sc: 'O(1)', desc: 'Double range until exceeded, then binary.' },
+    { id: 'interpolation',    name: 'Interpolation',     level: 'Intermediate', unit: 'Unit III', viz: 'bars',  tc: 'O(log log n)',sc: 'O(1)', desc: 'Probe by value interpolation. Best on uniform data.' },
+    { id: 'kmp',              name: 'KMP',               level: 'Advanced',     unit: 'Unit III', viz: 'string',tc: 'O(n+m)',      sc: 'O(m)', desc: 'Failure function avoids redundant comparisons.' },
+    { id: 'rabin_karp',       name: 'Rabin-Karp',        level: 'Advanced',     unit: 'Unit III', viz: 'string',tc: 'O(nm)',       sc: 'O(1)', desc: 'Rolling hash — compare hash first, then chars.' },
   ]},
-  { label: 'Sliding Window / Two Ptr', color: 'var(--dsa)', algos: [
-    { id: 'sw_max',   name: 'Sliding Window Max', viz: 'sw', tc: 'O(n)', sc: 'O(k)', desc: 'Deque keeps window max in O(1) per step.' },
-    { id: 'sw_sum',   name: 'Sliding Window Sum', viz: 'sw', tc: 'O(n)', sc: 'O(1)', desc: 'Expand right, shrink left to maintain sum.' },
-    { id: 'two_sum',  name: 'Two Sum (Two Ptr)',  viz: 'tp', tc: 'O(n)', sc: 'O(1)', desc: 'Sort then converge from both ends.' },
-    { id: 'three_sum',name: '3Sum',               viz: 'tp', tc: 'O(n²)',sc: 'O(1)', desc: 'Fix one, two-pointer on rest. O(n²) total.' },
+  { label: 'Sliding Window / Two Ptr', color: 'var(--dsa)', unit: 'Bonus', algos: [
+    { id: 'sw_max',   name: 'Sliding Window Max', level: 'Intermediate', unit: 'Bonus', viz: 'sw', tc: 'O(n)', sc: 'O(k)', desc: 'Deque keeps window max in O(1) per step.' },
+    { id: 'sw_sum',   name: 'Sliding Window Sum', level: 'Beginner',     unit: 'Bonus', viz: 'sw', tc: 'O(n)', sc: 'O(1)', desc: 'Expand right, shrink left to maintain sum.' },
+    { id: 'two_sum',  name: 'Two Sum (Two Ptr)',  level: 'Beginner',     unit: 'Bonus', viz: 'tp', tc: 'O(n)', sc: 'O(1)', desc: 'Sort then converge from both ends.' },
+    { id: 'three_sum',name: '3Sum',               level: 'Intermediate', unit: 'Bonus', viz: 'tp', tc: 'O(n²)',sc: 'O(1)', desc: 'Fix one, two-pointer on rest. O(n²) total.' },
   ]},
-  { label: 'Backtracking / Misc', color: 'var(--score)', algos: [
-    { id: 'nqueens',     name: 'N-Queens',           viz: 'nq',    tc: 'O(n!)',       sc: 'O(n)', desc: 'Place queens row-by-row, backtrack on conflict.' },
-    { id: 'huffman',     name: 'Huffman Coding',     viz: 'huff',  tc: 'O(n log n)',  sc: 'O(n)', desc: 'Min-freq chars get longer codes. Lossless.' },
-    { id: 'monte_carlo', name: 'Monte Carlo (π)',    viz: 'mc',    tc: 'O(n)',        sc: 'O(1)', desc: 'Random points inside/outside circle → π.' },
-    { id: 'primes_sieve',name: 'Sieve of Eratosthenes',viz:'sieve',tc: 'O(n log log n)',sc:'O(n)',desc: 'Cross out multiples to find all primes ≤ n.' },
-    { id: 'gcd_euclid',  name: 'Euclidean GCD',     viz: 'gcd',   tc: 'O(log min(a,b))',sc:'O(1)',desc: 'GCD(a,b) = GCD(b, a mod b). Recursive.' },
-    { id: 'sudoku',      name: 'Sudoku Solver',      viz: 'sudoku',tc: 'O(9^m)',      sc: 'O(m)', desc: 'Backtrack: place digit, recurse, undo on fail.' },
-    { id: 'subset_sum',  name: 'Subset Sum',         viz: 'dp1d',  tc: 'O(nW)',       sc: 'O(W)', desc: 'Can a subset sum to target? DP boolean table.' },
-  ]},
+  { label: 'Backtracking / Misc', color: 'var(--score)', unit: 'Unit I', algos: [
+    { id: 'nqueens',     name: 'N-Queens',           level: 'Advanced',     unit: 'Bonus', viz: 'nq',    tc: 'O(n!)',       sc: 'O(n)', desc: 'Place queens row-by-row, backtrack on conflict.' },
+    { id: 'huffman',     name: 'Huffman Coding',     level: 'Intermediate', unit: 'Bonus', viz: 'huff',  tc: 'O(n log n)',  sc: 'O(n)', desc: 'Min-freq chars get longer codes. Lossless.' },
+    { id: 'monte_carlo', name: 'Monte Carlo (π)',    level: 'Intermediate', unit: 'Bonus', viz: 'mc',    tc: 'O(n)',        sc: 'O(1)', desc: 'Random points inside/outside circle → π.' },
+    { id: 'primes_sieve',name: 'Sieve of Eratosthenes',level:'Beginner',    unit: 'Bonus', viz:'sieve',tc: 'O(n log log n)',sc:'O(n)',desc: 'Cross out multiples to find all primes ≤ n.' },
+    { id: 'gcd_euclid',  name: 'Euclidean GCD',     level: 'Beginner',     unit: 'Unit I', viz: 'gcd',   tc: 'O(log min(a,b))',sc:'O(1)',desc: 'GCD(a,b) = GCD(b, a mod b). Recursive.' },
+    { id: 'hanoi',       name: 'Tower of Hanoi',    level: 'Beginner',     unit: 'Unit I', viz: 'hanoi', tc: 'O(2ⁿ)',       sc: 'O(n)', desc: 'Move n disks from Source to Destination via Auxiliary peg.' },
+    { id: 'sudoku',      name: 'Sudoku Solver',      level: 'Advanced',     unit: 'Bonus', viz: 'sudoku',tc: 'O(9^m)',      sc: 'O(m)', desc: 'Backtrack: place digit, recurse, undo on fail.' },
+    { id: 'subset_sum',  name: 'Subset Sum',         level: 'Intermediate', unit: 'Bonus', viz: 'dp1d',  tc: 'O(nW)',       sc: 'O(W)', desc: 'Can a subset sum to target? DP boolean table.' },
+  ]}
 ]
 
 const ALL_ALGOS = ALGO_GROUPS.flatMap(g => g.algos)
@@ -532,6 +536,45 @@ const ALGO_EXPLANATIONS = {
     advantages: ['O(n log n) with patience sorting', 'Classic DP problem', 'Many applications', 'Builds understanding of subsequence problems'],
     disadvantages: ['O(n²) naive DP', 'Finding actual subsequence requires backtracking', 'Not trivial to implement optimally']
   },
+  stack_adt: {
+    what: 'The Stack is a linear data structure following Last-In-First-Out (LIFO) discipline. Elements are pushed onto the top and popped from the top.',
+    where: 'Function call stacks, recursion, expression evaluation, undo/redo mechanisms, syntax parsing',
+    why: 'O(1) time complexity for Push/Pop/Peek operations with strict LIFO ordering guarantee.',
+    advantages: ['O(1) constant time Push/Pop/Peek', 'Simple implementation', 'Memory efficient', 'Ideal for nested call tracking'],
+    disadvantages: ['Restricted top-only access', 'Potential stack overflow/underflow']
+  },
+  queue_adt: {
+    what: 'The Queue is a linear data structure following First-In-First-Out (FIFO) discipline. Elements enter at the rear and exit from the front.',
+    where: 'CPU scheduling (Round Robin), BFS graph traversal, printer spooling, message buffers',
+    why: 'O(1) time complexity for Enqueue/Dequeue operations with fair order processing.',
+    advantages: ['O(1) Enqueue and Dequeue operations', 'Guaranteed fair FIFO ordering', 'Essential for asynchronous buffers'],
+    disadvantages: ['Restricted front/rear access', 'Array queue requires circular handling']
+  },
+  round_robin: {
+    what: 'Round-Robin scheduling uses a Circular Queue ADT where each process receives a fixed time slice (quantum). Unfinished processes are rotated to the rear of the queue.',
+    where: 'Operating system kernel thread schedulers (Linux CFS, Windows scheduler), round-robin load balancers, packet switching routers.',
+    why: 'Prevents process starvation and guarantees deterministic maximum response time per time-slice.',
+    advantages: ['Starvation-free CPU allocation', 'Predictable max response latency', 'Ideal for time-sharing operating systems'],
+    disadvantages: ['Context-switch overhead if quantum is too small', 'Higher average turnaround time than Shortest Job First']
+  },
+  hanoi: {
+    what: 'The Tower of Hanoi is a classic mathematical puzzle and recursive algorithm where n disks of different sizes must be moved from a source peg to a target peg using an auxiliary peg.',
+    where: 'Compiler design, call stack recursion demonstrations, backup rotation algorithms (Grandfather-Father-Son strategy), algorithmic complexity studies.',
+    why: 'Demonstrates pure exponential divide-and-conquer recursion with O(2ⁿ - 1) minimal moves.',
+    advantages: ['Classic recursive structure', 'Minimal moves guarantee O(2ⁿ - 1)', 'Demonstrates state transitions'],
+    disadvantages: ['Exponential time complexity O(2ⁿ)', 'Impractical for large number of disks (n > 30)']
+  },
+}
+
+const getAlgoExplanation = (id, name, desc) => {
+  if (ALGO_EXPLANATIONS[id]) return ALGO_EXPLANATIONS[id]
+  return {
+    what: desc || `${name} is a fundamental computer science algorithm designed for structured data processing and computation.`,
+    where: 'Enterprise software systems, database query engines, and core algorithm libraries.',
+    why: 'Provides optimal performance guarantees and clear state transition mechanics.',
+    advantages: ['High efficiency and computational predictability', 'Well-defined algorithmic boundaries', 'Industry-standard technique'],
+    disadvantages: ['May require auxiliary space', 'Performance depends on initial data distribution']
+  }
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
@@ -564,7 +607,7 @@ function fenUpdate(bit,i,v,n){ for(;i<=n;i+=i&(-i))bit[i]+=v; }
 function fenQuery(bit,i){ let s=0; for(;i>0;i-=i&(-i))s+=bit[i]; return s; }
 
 export default function DSAVisualizer() {
-  const [algo, setAlgo] = useState(null)
+  const [algo, setAlgo] = useState(ALGO_GROUPS[0].algos[0])
   const [speed, setSpeed] = useState(380)
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(false)
@@ -598,8 +641,61 @@ export default function DSAVisualizer() {
   const [segState, setSegState] = useState({arr:[1,3,5,7,9,11],tree:[],hl:[],query:{l:1,r:4,result:null}})
   const [fenState, setFenState] = useState({arr:[3,2,4,5,1,6,2,3],bit:[],hl:[],prefix:[]})
   const [trieState, setTrieState] = useState({root:{c:{},end:false},words:['cat','car','card','care','dog','done'],inserted:[],searching:null,hl:[]})
-  const [sudokuState, setSudokuState] = useState({board:[],solutions:0,attempts:0})
+  const [sudokuState, setSudokuState] = useState({board:[],solutions:0,attempts:0,hl:[],nar:''})
   const [subsetState, setSubsetState] = useState({arr:[],target:0,dp:null,cur:null})
+  const [hanoiState, setHanoiState]   = useState({n:3,pegs:{A:[3,2,1],B:[],C:[]},currentMove:null,nar:''})
+
+  // Audio, Rewind History & Hotkeys state
+  const [soundOn, setSoundOn] = useState(true)
+  const [showShortcuts, setShowShortcuts] = useState(false)
+  const historyRef = useRef([])
+  const audioCtxRef = useRef(null)
+
+  const playAudioTone = (val = 200, type = 'sine') => {
+    if (!soundOn) return
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
+      }
+      const ctx = audioCtxRef.current
+      if (ctx.state === 'suspended') ctx.resume()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = type
+      const freq = 180 + (Math.min(Math.max(Number(val) || 20, 5), 100) / 100) * 650
+      osc.frequency.setValueAtTime(freq, ctx.currentTime)
+      gain.gain.setValueAtTime(0.06, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.09)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start()
+      osc.stop(ctx.currentTime + 0.09)
+    } catch (e) {}
+  }
+
+  const saveSnapshot = (snapshot) => {
+    historyRef.current.push(snapshot)
+    if (historyRef.current.length > 250) historyRef.current.shift()
+  }
+
+  const stepBack = () => {
+    if (historyRef.current.length > 0) {
+      const prev = historyRef.current.pop()
+      if (prev.arr) setArr(prev.arr)
+      if (prev.hl) setHl(prev.hl)
+      if (prev.gState) setGState(prev.gState)
+      if (prev.llList) setLlList(prev.llList)
+      if (prev.step !== undefined) {
+        stepRef.current = prev.step
+        setStep(prev.step)
+      }
+    }
+  }
+
+  // Filter and custom topic state
+  const [diffFilter, setDiffFilter] = useState('All')
+  const [unitFilter, setUnitFilter] = useState('All')
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Code generation state
   const [codeLang, setCodeLang] = useState('python')
@@ -619,6 +715,62 @@ export default function DSAVisualizer() {
   const codePanelRef = useRef(null)
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return
+      if (e.key === '?') {
+        setShowShortcuts(prev => !prev)
+      } else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault()
+        if (running) {
+          stopRef.current = true
+          setRunning(false)
+        } else {
+          runAlgorithm()
+        }
+      } else if (e.key === 'r' || e.key === 'R') {
+        reset()
+      } else if (e.key === 's' || e.key === 'S') {
+        setSoundOn(prev => !prev)
+      } else if (e.key === 'ArrowLeft') {
+        stepBack()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [running])
+
+  const handleCustomTopicSubmit = (topic) => {
+    if (!topic.trim()) return
+    const term = topic.toLowerCase().trim()
+    for (const group of ALGO_GROUPS) {
+      for (const a of group.algos) {
+        if (a.id === term || a.name.toLowerCase() === term || a.name.toLowerCase().includes(term) || term.includes(a.name.toLowerCase())) {
+          setAlgo(a)
+          setShowCodePanel(true)
+          fetchOverview(a.id)
+          fetchCode(a.id, codeLang)
+          return
+        }
+      }
+    }
+
+    const customAlgo = {
+      id: term.replace(/[^a-z0-9]/g, '_'),
+      name: topic,
+      viz: 'bars',
+      tc: 'O(AI Analysis)',
+      sc: 'O(AI Analysis)',
+      desc: 'Custom topic generated via AI narration & multi-language code synthesis.',
+      level: 'Custom',
+      unit: 'Custom Topic'
+    }
+    setAlgo(customAlgo)
+    setShowCodePanel(true)
+    fetchOverview(customAlgo.id)
+    fetchCode(customAlgo.id, codeLang)
+  }
+
+  useEffect(() => {
     if (showCodePanel && codePanelRef.current) {
       setTimeout(() => {
         codePanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -626,7 +778,6 @@ export default function DSAVisualizer() {
     }
   }, [showCodePanel])
 
-  const incStep = () => { stepRef.current++; setStep(stepRef.current) }
   const spd = () => speed
 
   const fetchNarration = useCallback(async (algoName, state) => {
@@ -674,7 +825,7 @@ export default function DSAVisualizer() {
 
   const reset = () => {
     stopRef.current = true
-    synth.current.cancel()
+    try { synth.current?.cancel() } catch {}
     stopRef.current = false
     stepRef.current = 0
     setStep(0); setDone(false); setRunning(false); setNarration(null)
@@ -710,13 +861,22 @@ export default function DSAVisualizer() {
     if (v === 'fenwick') { const a=[3,2,4,5,1,6,2,3]; const b=new Array(a.length+1).fill(0); a.forEach((v,i)=>fenUpdate(b,i+1,v,a.length)); setFenState({arr:a,bit:b,hl:[],prefix:[],n:a.length,nar:''}); }
     if (v === 'trie') setTrieState({root:{c:{},end:false},words:['cat','car','card','care','dog','done'],inserted:[],searching:null,hl:[],nar:''})
     if (v === 'sudoku') { const b=[[5,3,0,0,7,0,0,0,0],[6,0,0,1,9,5,0,0,0],[0,9,8,0,0,0,0,6,0],[8,0,0,0,6,0,0,0,3],[4,0,0,8,0,3,0,0,1],[7,0,0,0,2,0,0,0,6],[0,6,0,0,0,0,2,8,0],[0,0,0,4,1,9,0,0,5],[0,0,0,0,8,0,0,7,9]]; setSudokuState({board:b.map(r=>[...r]),solutions:0,attempts:0,hl:[],nar:''}); }
+    if (v === 'hanoi') setHanoiState({n:3,pegs:{A:[3,2,1],B:[],C:[]},currentMove:null,nar:''})
   }
 
-  const speak = (text) => { synth.current.cancel(); synth.current.speak(Object.assign(new SpeechSynthesisUtterance(text),{rate:1.05})) }
+  const incStep = (soundVal) => {
+    stepRef.current++
+    setStep(stepRef.current)
+    if (soundVal !== undefined) playAudioTone(soundVal)
+    saveSnapshot({ arr: [...arr], hl: { ...hl }, gState: { ...gState }, llList: [...llList], step: stepRef.current })
+  }
+
+  const speak = (text) => { try { synth.current?.cancel(); synth.current?.speak(Object.assign(new SpeechSynthesisUtterance(text),{rate:1.05})) } catch {} }
 
   // ── RUN DISPATCHER ────────────────────────────────────────────────────────
   const runAlgorithm = async () => {
     stopRef.current = false
+    historyRef.current = []
     setRunning(true); setDone(false); stepRef.current = 0; setStep(0); setNarration(null)
 
     const runners = {
@@ -729,22 +889,23 @@ export default function DSAVisualizer() {
       bfs: bfsAnim, dfs: dfsAnim, dijkstra: dijkstraAnim, bellman: bellmanAnim, astar: astarAnim, toposort: topoAnim, prim: primAnim, kruskal: kruskalAnim, floyd: floydAnim, tarjan: tarjanAnim,
       bst_insert: bstInsertAnim, bst_search: bstSearchAnim, inorder: inorderAnim, preorder: preorderAnim, postorder: postorderAnim, avl: avlAnim,
       segtree: segAnim, fenwick: fenAnim, trie: trieAnim,
+      stack_adt: stackAnim, queue_adt: queueAnim,
       ll_insert: llInsertAnim, ll_delete: llDeleteAnim, ll_reverse: llReverseAnim, ll_cycle: llCycleAnim, ll_merge: llMergeAnim,
       lcs: lcsAnim, knapsack: knapsackAnim, edit_dist: editDistAnim, matrix_chain: matrixChainAnim, coin: coinAnim,
       union_find: ufAnim, hash_chain: hashChainAnim, hash_open: hashOpenAnim, heap_insert: heapInsAnim, heap_extract: heapExtAnim,
       sw_max: swMaxAnim, sw_sum: swSumAnim, two_sum: twoSumAnim, three_sum: threeSumAnim,
       nqueens: nqueensAnim, huffman: huffmanAnim, monte_carlo: mcAnim, primes_sieve: sieveAnim, gcd_euclid: gcdAnim,
       kmp: kmpAnim, rabin_karp: rabinKarpAnim,
-      sudoku: sudokuAnim, subset_sum: subsetSumAnim,
+      sudoku: sudokuAnim, subset_sum: subsetSumAnim, hanoi: hanoiAnim,
     }
     try { await (runners[algo.id] || runners.bubble)() } catch(e) {}
-    if (!stopRef.current) { setDone(true); setRunning(false) }
+    if (!stopRef.current) { setDone(true); setRunning(false); playAudioTone(80, 'triangle') }
   }
 
   // ─── SORTING ────────────────────────────────────────────────────────────────
   const bubbleSort = async () => {
     let ar = [...arr]
-    for (let i=0;i<ar.length;i++) { for (let j=0;j<ar.length-i-1;j++) { if(stopRef.current)return; const s=Array.from({length:i},(_,k)=>ar.length-1-k); setHl({comparing:[j,j+1],sorted:s,narration:`Comparing ${ar[j]} and ${ar[j+1]}${ar[j]>ar[j+1]?' → swap':''}`}); setArr([...ar]); incStep(); await sleep(spd()); if(ar[j]>ar[j+1]){[ar[j],ar[j+1]]=[ar[j+1],ar[j]];setHl({swapping:[j,j+1],sorted:s});setArr([...ar]);await sleep(spd());}}}
+    for (let i=0;i<ar.length;i++) { for (let j=0;j<ar.length-i-1;j++) { if(stopRef.current)return; const s=Array.from({length:i},(_,k)=>ar.length-1-k); setHl({comparing:[j,j+1],sorted:s,narration:`Comparing ${ar[j]} and ${ar[j+1]}${ar[j]>ar[j+1]?' → swap':''}`}); setArr([...ar]); incStep(ar[j]); await sleep(spd()); if(ar[j]>ar[j+1]){[ar[j],ar[j+1]]=[ar[j+1],ar[j]];setHl({swapping:[j,j+1],sorted:s});setArr([...ar]);playAudioTone(ar[j+1],'sawtooth');await sleep(spd());}}}
     setHl({sorted:ar.map((_,i)=>i),narration:'Bubble Sort complete!'}); setArr([...ar]); await fetchNarration(algo.name,{phase:'complete'})
   }
   const insertionSort = async () => {
@@ -986,6 +1147,50 @@ export default function DSAVisualizer() {
     while(ia<a.length&&ib<b.length){if(stopRef.current)return;if(a[ia].v<b[ib].v)merged.push({...a[ia++],s:'f'});else merged.push({...b[ib++],s:'f'});incStep();setLlList([...merged,...a.slice(ia),...b.slice(ib)].map(n=>({...n})));await sleep(spd());}
     while(ia<a.length)merged.push({...a[ia++],s:'n'});while(ib<b.length)merged.push({...b[ib++],s:'n'});setLlList(merged)
   }
+  const stackAnim = async () => {
+    setLlList([]);
+    const items = [12, 28, 45, 67, 89];
+    let curr = [];
+    for (let val of items) {
+      if (stopRef.current) return;
+      curr = [{ id: Date.now() + Math.random(), v: val, s: 'new' }, ...curr];
+      setLlList([...curr]);
+      incStep();
+      await sleep(spd());
+    }
+    for (let i = 0; i < 2; i++) {
+      if (stopRef.current || !curr.length) return;
+      curr[0].s = 'del';
+      setLlList([...curr]);
+      await sleep(spd() * 1.2);
+      curr = curr.slice(1);
+      setLlList([...curr].map(n => ({ ...n, s: 'n' })));
+      incStep();
+      await sleep(spd());
+    }
+  }
+  const queueAnim = async () => {
+    setLlList([]);
+    const items = [15, 30, 45, 60, 75];
+    let curr = [];
+    for (let val of items) {
+      if (stopRef.current) return;
+      curr = [...curr, { id: Date.now() + Math.random(), v: val, s: 'new' }];
+      setLlList([...curr]);
+      incStep();
+      await sleep(spd());
+    }
+    for (let i = 0; i < 2; i++) {
+      if (stopRef.current || !curr.length) return;
+      curr[0].s = 'del';
+      setLlList([...curr]);
+      await sleep(spd() * 1.2);
+      curr = curr.slice(1);
+      setLlList([...curr].map(n => ({ ...n, s: 'n' })));
+      incStep();
+      await sleep(spd());
+    }
+  }
 
   // ── DP ────────────────────────────────────────────────────────────────────
   const lcsAnim = async () => {
@@ -1158,8 +1363,35 @@ export default function DSAVisualizer() {
         <div className={styles.titleRow}>
           <span className={styles.icon}>⬡</span>
           <div>
-            <h1 className={styles.title}>DSAVisualizer</h1>
-            <p className={styles.sub}>50+ algorithms — sorting, graphs, trees, DP, and rare ones</p>
+            <h1 className={styles.title}>DSAVisualizer & AI Learning Hub</h1>
+            <p className={styles.sub}>Interactive algorithm animation with step-by-step AI narration & multi-language code synthesis</p>
+          </div>
+        </div>
+
+        {/* Top Search & Difficulty Filters */}
+        <div className={styles.topFilterRow}>
+          <div className={styles.searchWrap}>
+            <span className={styles.searchIcon}>🔍</span>
+            <input 
+              className={styles.searchInput}
+              placeholder="Search or type any topic (e.g. Round Robin, Kadane's, Deque, B-Tree, Chaining)..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleCustomTopicSubmit(searchQuery) }}
+            />
+          </div>
+
+          <div className={styles.filterGroup}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Difficulty:</span>
+            {['All', 'Beginner', 'Intermediate', 'Advanced'].map(lvl => (
+              <button
+                key={lvl}
+                className={`${styles.filterPill} ${diffFilter === lvl ? styles.filterPillActive : ''}`}
+                onClick={() => setDiffFilter(lvl)}
+              >
+                {lvl === 'All' ? '✨ All Levels' : lvl === 'Beginner' ? '🟢 Basic' : lvl === 'Intermediate' ? '🟡 Intermediate' : '🔴 Advanced'}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -1167,20 +1399,51 @@ export default function DSAVisualizer() {
       <div className={styles.mainLayout}>
         {/* Sidebar */}
         <div className={styles.sidebar}>
-          {ALGO_GROUPS.map(group => (
-            <div key={group.label} className={styles.sideGroup}>
-              <div className={styles.sideGroupLabel} style={{color:group.color}}>{group.label}</div>
-              {group.algos.map(a => (
-                <button
-                  key={a.id}
-                  className={`${styles.sideBtn} ${algo?.id===a.id ? styles.sideBtnActive : ''}`}
-                  style={algo?.id===a.id ? {'--ac':group.color} : {}}
-                  onClick={() => { if(!running) setAlgo(a) }}
-                  disabled={running}
-                >{a.name}</button>
-              ))}
-            </div>
-          ))}
+          {ALGO_GROUPS.map(group => {
+            const filteredAlgos = group.algos.filter(a => {
+              const matchDiff = diffFilter === 'All' || a.level === diffFilter
+              const matchSearch = !searchQuery.trim() || 
+                a.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                a.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                a.id.toLowerCase().includes(searchQuery.toLowerCase())
+              return matchDiff && matchSearch
+            })
+
+            if (filteredAlgos.length === 0) return null
+
+            return (
+              <div key={group.label} className={styles.sideGroup}>
+                <div className={styles.sideGroupLabel} style={{color:group.color}}>
+                  <span>{group.label}</span>
+                  <span style={{fontSize:'0.65rem',opacity:0.7,background:'rgba(255,255,255,0.06)',padding:'1px 6px',borderRadius:'99px'}}>{filteredAlgos.length}</span>
+                </div>
+                {filteredAlgos.map(a => (
+                  <button
+                    key={a.id}
+                    className={`${styles.sideBtn} ${algo?.id===a.id ? styles.sideBtnActive : ''}`}
+                    style={algo?.id===a.id ? {'--ac':group.color} : {display:'flex',alignItems:'center',justify:'space-between'}}
+                    onClick={() => { if(!running) setAlgo(a) }}
+                    disabled={running}
+                  >
+                    <span>{a.name}</span>
+                    <span className={`${styles.levelTag} ${a.level==='Beginner'?styles.levelBeginner:a.level==='Intermediate'?styles.levelIntermediate:styles.levelAdvanced}`}>
+                      {a.level==='Beginner' ? '🟢 Basic' : a.level==='Intermediate' ? '🟡 Inter' : '🔴 Adv'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )
+          })}
+
+          {searchQuery.trim() && (
+            <button 
+              className={styles.customTopicBtn}
+              onClick={() => handleCustomTopicSubmit(searchQuery)}
+            >
+              <span>✨ Visualize Custom Topic:</span>
+              <strong>"{searchQuery}"</strong>
+            </button>
+          )}
         </div>
 
         {/* Canvas */}
@@ -1188,7 +1451,7 @@ export default function DSAVisualizer() {
           {!algo && (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>⬡</div>
-              <p>Select an algorithm from the sidebar</p>
+              <p>Select an algorithm from the sidebar or search any custom topic above</p>
             </div>
           )}
 
@@ -1196,17 +1459,31 @@ export default function DSAVisualizer() {
             <>
               {/* Controls */}
               <div className={styles.controls} style={{'--gc':accentColor}}>
-                <div className={styles.algoTitle} style={{color:accentColor}}>{algo.name}</div>
+                <div style={{display:'flex',alignItems:'center',gap:'12px',flexWrap:'wrap'}}>
+                  <div className={styles.algoTitle} style={{color:accentColor}}>{algo.name}</div>
+                  <span className={`${styles.levelTag} ${algo.level==='Beginner'?styles.levelBeginner:algo.level==='Intermediate'?styles.levelIntermediate:styles.levelAdvanced}`} style={{fontSize:'.75rem',padding:'4px 8px'}}>
+                    {algo.level==='Beginner' ? '🟢 Basic Level' : algo.level==='Intermediate' ? '🟡 Intermediate Level' : algo.level==='Advanced' ? '🔴 Advanced Level' : '✨ Custom Topic'}
+                  </span>
+                  <span className={styles.badge} style={{background:'rgba(255,255,255,.05)',color:'var(--text2)'}}>
+                    🏷️ {algo.unit || 'General'}
+                  </span>
+                </div>
                 <div className={styles.complexRow}>
                   <span className={styles.badge} style={{background:`${accentColor}18`,color:accentColor,border:`1px solid ${accentColor}40`}}>⏱ {algo.tc}</span>
                   <span className={styles.badge} style={{background:'rgba(255,255,255,.05)',color:'var(--text2)',border:'1px solid rgba(255,255,255,.1)'}}>📦 {algo.sc}</span>
                   <span className={styles.badge} style={{background:'rgba(255,255,255,.03)',color:'var(--text3)',border:'1px solid rgba(255,255,255,.06)',fontSize:'.65rem'}}>{algo.desc}</span>
                 </div>
                 <div className={styles.actionRow}>
-                  <div className={styles.speedWrap}><span className={styles.speedLabel}>⚡ Speed</span>
+                  <div className={styles.speedWrap}>
+                    <span className={styles.speedLabel}>⚡ Speed ({Math.round((950 - speed) / 100 * 10) / 10}x)</span>
                     <input type="range" min="50" max="900" step="50" value={900-speed+50} onChange={e=>setSpeed(900-Number(e.target.value)+50)} className={styles.slider} disabled={running}/>
                   </div>
+                  <button className={styles.resetBtn} onClick={stepBack} disabled={running || historyRef.current.length === 0} title="Step Back (Left Arrow)">⏮️ Rewind</button>
                   <button className={styles.resetBtn} onClick={reset} disabled={running}>↺ Reset</button>
+                  <button className={styles.resetBtn} onClick={() => setSoundOn(!soundOn)} style={{ borderColor: soundOn ? 'rgba(52,211,153,.3)' : 'var(--border-light)', background: soundOn ? 'rgba(52,211,153,.08)' : 'transparent', color: soundOn ? 'var(--dsa)' : 'var(--text3)' }} title="Toggle Sound Synthesizer (S)">
+                    {soundOn ? '🔊 Sound' : '🔇 Mute'}
+                  </button>
+                  <button className={styles.resetBtn} onClick={() => setShowShortcuts(true)} title="Keyboard Shortcuts (?)">⌨️ Hotkeys</button>
                   <button className={styles.resetBtn} onClick={()=>setShowExplanation(true)} disabled={running} style={{background:'rgba(52,211,153,.12)',color:'var(--dsa)',border:'1px solid rgba(52,211,153,.3)'}}>📚 Learn</button>
                   <button className={styles.resetBtn} onClick={()=>{setShowCodePanel(!showCodePanel);if(!codeData&&!showCodePanel)fetchCode(algo.id,codeLang)}} disabled={running} style={{borderColor:showCodePanel?'var(--secondary)':'var(--border-light)'}}>
                     <span style={{fontSize:'1.1rem'}}>{"</>"}</span> Code
@@ -1497,6 +1774,47 @@ export default function DSAVisualizer() {
                   </div>
                 )}
 
+                {/* TOWER OF HANOI */}
+                {algo.viz === 'hanoi' && (
+                  <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 600 }}>
+                      {hanoiState.currentMove || 'Tower of Hanoi (3 Disks)'}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', height: '180px', padding: '0 20px', position: 'relative' }}>
+                      {['A', 'B', 'C'].map(pegKey => (
+                        <div key={pegKey} style={{ display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', width: '120px', position: 'relative' }}>
+                          <div style={{ width: '120px', height: '8px', background: 'rgba(255,255,255,0.2)', borderRadius: '4px' }} />
+                          <div style={{ position: 'absolute', bottom: '8px', width: '6px', height: '140px', background: 'rgba(255,255,255,0.15)', borderRadius: '3px 3px 0 0', zIndex: 0 }} />
+                          <div style={{ display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', gap: '4px', zIndex: 1, marginBottom: '8px' }}>
+                            {(hanoiState.pegs[pegKey] || []).map(diskVal => {
+                              const diskColors = { 1: '#38bdf8', 2: '#f59e0b', 3: '#34d399' }
+                              return (
+                                <div key={diskVal} style={{
+                                  width: `${diskVal * 32 + 30}px`,
+                                  height: '22px',
+                                  borderRadius: '6px',
+                                  background: diskColors[diskVal] || 'var(--primary)',
+                                  color: '#000',
+                                  fontWeight: 800,
+                                  fontSize: '11px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                  transition: 'all 0.25s ease'
+                                }}>
+                                  Disk {diskVal}
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--secondary)', marginTop: '8px' }}>Peg {pegKey}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {done && <div className={styles.doneMsg} style={{color:accentColor}}>✓ Complete in {step} steps</div>}
               </div>
 
@@ -1521,16 +1839,40 @@ export default function DSAVisualizer() {
                     <div className={styles.overviewMain}>
                       <span className={styles.ovLabel} style={{color:accentColor}}>Overview</span>
                       <p className={styles.ovDesc}>{overview.description}</p>
-                      {overview.theoretical_foundation && <div className={styles.theoryBox}><span className={styles.theoryLabel} style={{color:accentColor}}>Foundation:</span><span className={styles.theoryVal}>{overview.theoretical_foundation}</span></div>}
+                      {overview.theoretical_foundation && (
+                        <div className={styles.theoryBox}>
+                          <span className={styles.theoryLabel} style={{color:accentColor}}>Foundation: </span>
+                          <span className={styles.theoryVal}>{overview.theoretical_foundation}</span>
+                        </div>
+                      )}
                     </div>
                     <div className={styles.complexityGrid}>
-                      {[{label:'Best',val:overview.time_complexity?.best},{label:'Avg',val:overview.time_complexity?.average},{label:'Worst',val:overview.time_complexity?.worst},{label:'Space',val:overview.space_complexity}].filter(c=>c.val).map(c=>(
-                        <div key={c.label} className={styles.complexBox}><span className={styles.complexLabel}>{c.label}</span><span className={styles.complexVal} style={{color:accentColor}}>{c.val}</span></div>
+                      {[
+                        {label:'Best',val:overview.time_complexity?.best},
+                        {label:'Avg',val:overview.time_complexity?.average},
+                        {label:'Worst',val:overview.time_complexity?.worst},
+                        {label:'Space',val:overview.space_complexity}
+                      ].filter(c=>c.val).map(c=>(
+                        <div key={c.label} className={styles.complexBox}>
+                          <span className={styles.complexLabel}>{c.label}: </span>
+                          <span className={styles.complexVal} style={{color:accentColor}}>{c.val}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
-                  {overview.production_use_cases?.length > 0 && <div className={styles.useCases}><span className={styles.useCasesLabel} style={{color:accentColor}}>Real-world Use:</span><ul className={styles.useCasesList}>{overview.production_use_cases.map((uc,i)=><li key={i}>{uc}</li>)}</ul></div>}
-                  {overview.key_concept && <div style={{marginTop:'.75rem',padding:'.6rem .85rem',borderRadius:'var(--radius)',background:'rgba(52,211,153,.06)',border:'1px solid rgba(52,211,153,.15)',fontSize:'.82rem',color:'var(--dsa)'}}><strong>💡 Key:</strong> {overview.key_concept}</div>}
+                  {overview.production_use_cases?.length > 0 && (
+                    <div className={styles.useCases}>
+                      <span className={styles.useCasesLabel} style={{color:accentColor}}>Real-world Use:</span>
+                      <ul className={styles.useCasesList}>
+                        {overview.production_use_cases.map((uc,i)=><li key={i}>{uc}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {overview.key_concept && (
+                    <div className={styles.keyConceptBox}>
+                      <strong>💡 Key:</strong> {overview.key_concept}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1573,51 +1915,85 @@ export default function DSAVisualizer() {
               )}
 
               {/* Explanation Modal */}
-              {showExplanation && algo && ALGO_EXPLANATIONS[algo.id] && (
+              {showExplanation && algo && (
                 <div className={styles.modalOverlay} onClick={e=>{if(e.target===e.currentTarget)setShowExplanation(false)}}>
                   <div className={styles.modalContent}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'start',marginBottom:'28px'}}>
-                      <div>
-                        <h2 style={{color:accentColor,fontSize:'1.6rem',fontWeight:'800',margin:0,marginBottom:'6px',letterSpacing:'-0.02em'}}>{algo.name}</h2>
-                        <p style={{color:'var(--text3)',fontSize:'.82rem',margin:0}}>📖 Deep-dive explanation — understand before you animate</p>
-                      </div>
-                      <button className={styles.modalClose} onClick={()=>setShowExplanation(false)}>✕</button>
+                    {(() => {
+                      const exp = getAlgoExplanation(algo.id, algo.name, algo.desc)
+                      return (
+                        <>
+                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'start',marginBottom:'28px'}}>
+                            <div>
+                              <h2 style={{color:accentColor,fontSize:'1.6rem',fontWeight:'800',margin:0,marginBottom:'6px',letterSpacing:'-0.02em'}}>{algo.name}</h2>
+                              <p style={{color:'var(--text3)',fontSize:'.82rem',margin:0}}>📖 Deep-dive explanation — understand before you animate</p>
+                            </div>
+                            <button className={styles.modalClose} onClick={()=>setShowExplanation(false)}>✕</button>
+                          </div>
+
+                          <div style={{display:'flex',flexDirection:'column',gap:'22px'}}>
+                            <div className={styles.modalSection}>
+                              <h3 className={styles.modalSectionTitle} style={{color:'var(--dsa)'}}>📖 What is it?</h3>
+                              <p className={styles.modalText}>{exp.what}</p>
+                            </div>
+
+                            <div className={styles.modalSection}>
+                              <h3 className={styles.modalSectionTitle} style={{color:'var(--sql)'}}>🌍 Where is it used?</h3>
+                              <p className={styles.modalText}>{exp.where}</p>
+                            </div>
+
+                            <div className={styles.modalSection}>
+                              <h3 className={styles.modalSectionTitle} style={{color:'var(--score)'}}>💡 Why use it?</h3>
+                              <p className={styles.modalText}>{exp.why}</p>
+                            </div>
+
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
+                              <div className={styles.modalSection} style={{background:'rgba(76,175,80,.06)',padding:'14px',borderRadius:'10px',border:'1px solid rgba(76,175,80,.15)'}}>
+                                <h3 className={styles.modalSectionTitle} style={{color:'rgb(76,175,80)',marginBottom:'8px'}}>✅ Advantages</h3>
+                                <ul className={styles.modalList} style={{color:'var(--text2)'}}>
+                                  {(exp.advantages || []).map((adv,i)=><li key={i}>{adv}</li>)}
+                                </ul>
+                              </div>
+                              <div className={styles.modalSection} style={{background:'rgba(239,68,68,.06)',padding:'14px',borderRadius:'10px',border:'1px solid rgba(239,68,68,.15)'}}>
+                                <h3 className={styles.modalSectionTitle} style={{color:'rgb(239,68,68)',marginBottom:'8px'}}>❌ Disadvantages</h3>
+                                <ul className={styles.modalList} style={{color:'var(--text2)'}}>
+                                  {(exp.disadvantages || []).map((d,i)=><li key={i}>{d}</li>)}
+                                </ul>
+                              </div>
+                            </div>
+
+                            <div style={{display:'flex',gap:'10px',paddingTop:'8px',borderTop:'1px solid rgba(255,255,255,.06)'}}>
+                              <button className={styles.modalCTA} onClick={()=>setShowExplanation(false)}>✓ Got it — Start Visualizing</button>
+                            </div>
+                          </div>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+              )}
+              {/* Keyboard Shortcuts Modal */}
+              {showShortcuts && (
+                <div className={styles.modalOverlay} onClick={() => setShowShortcuts(false)}>
+                  <div className={styles.modalContent} style={{ maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                      <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                        ⌨️ Keyboard Shortcuts
+                      </h2>
+                      <button className={styles.modalClose} onClick={() => setShowShortcuts(false)}>×</button>
                     </div>
-
-                    <div style={{display:'flex',flexDirection:'column',gap:'22px'}}>
-                      <div className={styles.modalSection}>
-                        <h3 className={styles.modalSectionTitle} style={{color:'var(--dsa)'}}>📖 What is it?</h3>
-                        <p className={styles.modalText}>{ALGO_EXPLANATIONS[algo.id].what}</p>
-                      </div>
-
-                      <div className={styles.modalSection}>
-                        <h3 className={styles.modalSectionTitle} style={{color:'var(--sql)'}}>🌍 Where is it used?</h3>
-                        <p className={styles.modalText}>{ALGO_EXPLANATIONS[algo.id].where}</p>
-                      </div>
-
-                      <div className={styles.modalSection}>
-                        <h3 className={styles.modalSectionTitle} style={{color:'var(--score)'}}>💡 Why use it?</h3>
-                        <p className={styles.modalText}>{ALGO_EXPLANATIONS[algo.id].why}</p>
-                      </div>
-
-                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
-                        <div className={styles.modalSection} style={{background:'rgba(76,175,80,.06)',padding:'14px',borderRadius:'10px',border:'1px solid rgba(76,175,80,.15)'}}>
-                          <h3 className={styles.modalSectionTitle} style={{color:'rgb(76,175,80)',marginBottom:'8px'}}>✅ Advantages</h3>
-                          <ul className={styles.modalList} style={{color:'var(--text2)'}}>
-                            {ALGO_EXPLANATIONS[algo.id].advantages.map((adv,i)=><li key={i}>{adv}</li>)}
-                          </ul>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {[
+                        { key: 'Space', action: 'Play / Pause Algorithm Animation' },
+                        { key: '← Left Arrow', action: 'Rewind Step Back' },
+                        { key: 'R', action: 'Reset Animation' },
+                        { key: 'S', action: 'Toggle Audio Sound Synthesizer' },
+                        { key: '?', action: 'Toggle Keyboard Shortcuts Modal' },
+                      ].map(shortcut => (
+                        <div key={shortcut.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+                          <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{shortcut.action}</span>
+                          <kbd style={{ background: 'rgba(56,189,248,0.15)', color: 'var(--secondary)', border: '1px solid rgba(56,189,248,0.3)', borderRadius: '6px', padding: '3px 10px', fontSize: '0.8rem', fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}>{shortcut.key}</kbd>
                         </div>
-                        <div className={styles.modalSection} style={{background:'rgba(239,68,68,.06)',padding:'14px',borderRadius:'10px',border:'1px solid rgba(239,68,68,.15)'}}>
-                          <h3 className={styles.modalSectionTitle} style={{color:'rgb(239,68,68)',marginBottom:'8px'}}>❌ Disadvantages</h3>
-                          <ul className={styles.modalList} style={{color:'var(--text2)'}}>
-                            {ALGO_EXPLANATIONS[algo.id].disadvantages.map((d,i)=><li key={i}>{d}</li>)}
-                          </ul>
-                        </div>
-                      </div>
-
-                      <div style={{display:'flex',gap:'10px',paddingTop:'8px',borderTop:'1px solid rgba(255,255,255,.06)'}}>
-                        <button className={styles.modalCTA} onClick={()=>setShowExplanation(false)}>✓ Got it — Start Visualizing</button>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 </div>

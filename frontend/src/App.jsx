@@ -1,23 +1,28 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
-import Home from './pages/Home'
-import SQLens from './pages/SQLens'
-import GitNarrate from './pages/GitNarrate'
-import DSAVisualizer from './pages/DSAVisualizer'
-import DevMindScore from './pages/DevMindScore'
-import AuthPage from './pages/AuthPage'
+
+const Home = lazy(() => import('./pages/Home'))
+const SQLens = lazy(() => import('./pages/SQLens'))
+const GitNarrate = lazy(() => import('./pages/GitNarrate'))
+const DSAVisualizer = lazy(() => import('./pages/DSAVisualizer'))
+const DevMindScore = lazy(() => import('./pages/DevMindScore'))
+const AuthPage = lazy(() => import('./pages/AuthPage'))
 
 export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const userId = localStorage.getItem('devmind_user_id')
-    const username = localStorage.getItem('devmind_username')
-    if (userId && username) {
-      setUser({ id: userId, username })
+    let userId = localStorage.getItem('devmind_user_id')
+    let username = localStorage.getItem('devmind_username')
+    if (!userId || !username) {
+      userId = 'guest_101'
+      username = 'Developer Learner'
+      localStorage.setItem('devmind_user_id', userId)
+      localStorage.setItem('devmind_username', username)
     }
+    setUser({ id: userId, username })
     setLoading(false)
   }, [])
 
@@ -46,19 +51,41 @@ export default function App() {
     )
   }
 
+  const pageFallback = (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '60vh',
+      gap: '12px',
+      color: 'var(--text-muted)',
+      fontFamily: 'Inter, sans-serif'
+    }}>
+      <div className="spinner" style={{ width: '28px', height: '28px', borderTopColor: 'var(--primary)' }} />
+      <span style={{ fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.05em' }}>Loading DevMind Experience...</span>
+    </div>
+  )
+
   if (!user) {
-    return <AuthPage onLogin={handleLogin} />
+    return (
+      <Suspense fallback={pageFallback}>
+        <AuthPage onLogin={handleLogin} />
+      </Suspense>
+    )
   }
 
   return (
     <Layout user={user} onLogout={handleLogout}>
-      <Routes>
-        <Route path="/"            element={<Home />} />
-        <Route path="/sqllens"     element={<SQLens />} />
-        <Route path="/gitnarrate"  element={<GitNarrate />} />
-        <Route path="/dsa"         element={<DSAVisualizer />} />
-        <Route path="/score"       element={<DevMindScore />} />
-      </Routes>
+      <Suspense fallback={pageFallback}>
+        <Routes>
+          <Route path="/"            element={<Home />} />
+          <Route path="/sqllens"     element={<SQLens />} />
+          <Route path="/gitnarrate"  element={<GitNarrate />} />
+          <Route path="/dsa"         element={<DSAVisualizer />} />
+          <Route path="/score"       element={<DevMindScore />} />
+        </Routes>
+      </Suspense>
     </Layout>
   )
 }

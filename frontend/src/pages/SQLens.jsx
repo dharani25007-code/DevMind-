@@ -195,6 +195,38 @@ export default function SQLens() {
                 </button>
               ))}
             </div>
+
+            {/* Glassmorphism Schema Quick Preview */}
+            <div className={styles.schemaQuickPreview}>
+              <div className={styles.schemaQuickHeader}>
+                <span className={styles.schemaQuickTitle}>SAMPLE DATABASE SCHEMA</span>
+                <span className={styles.schemaQuickSub}>Click any column chip to insert into query</span>
+              </div>
+              <div className={styles.schemaQuickList}>
+                {SCHEMA.map(table => (
+                  <div key={table.name} className={styles.schemaQuickCard}>
+                    <div className={styles.schemaQuickCardHeader}>
+                      <span className={styles.schemaQuickIcon}>{table.icon}</span>
+                      <span className={styles.schemaQuickTableName}>{table.name}:</span>
+                    </div>
+                    <div className={styles.schemaQuickCols}>
+                      {table.cols.map(col => (
+                        <button
+                          key={col.name}
+                          className={styles.schemaQuickChip}
+                          onClick={() => insertColName(`${table.name}.${col.name}`)}
+                          title={`Type: ${col.type} ${col.pk ? '(Primary Key)' : col.fk ? `(FK -> ${col.fk})` : ''}`}
+                        >
+                          <span className={styles.chipName}>{col.name}</span>
+                          {col.pk && <span className={styles.chipPk}>PK</span>}
+                          {col.fk && <span className={styles.chipFk}>FK</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {error && <div className={styles.error}>{error}</div>}
@@ -259,6 +291,26 @@ export default function SQLens() {
                   {result.concepts.map(c => <span key={c} className={styles.concept}>{c}</span>)}
                 </div>
               )}
+
+              {/* Query Execution Plan Node Visualizer */}
+              <div className={styles.executionPlanWrap}>
+                <div className={styles.sectionLabel}>Query Execution Plan (Database Engine Pipeline)</div>
+                <div className={styles.executionNodes}>
+                  {[
+                    { step: '1. Scan', type: result.sql?.toLowerCase().includes('where') ? 'Index / Filter Scan' : 'Sequential Table Scan', detail: 'Read rows from disk/memory buffer', cost: 'cost=0.00..18.50' },
+                    { step: '2. Join / Filter', type: result.sql?.toLowerCase().includes('join') ? 'Hash Match Join' : 'Filter Predicate', detail: 'Filter records matching WHERE/JOIN clauses', cost: 'cost=18.50..35.20' },
+                    { step: '3. Aggregate', type: result.sql?.toLowerCase().includes('group') || result.sql?.toLowerCase().includes('count') ? 'Hash Aggregate / Group' : 'Project Columns', detail: 'Group, count, or select target column projection', cost: 'cost=35.20..42.10' },
+                    { step: '4. Output', type: result.sql?.toLowerCase().includes('order') ? 'Sort & Return Stream' : 'Result Set Buffer', detail: 'Order results and stream output to client', cost: 'cost=42.10..45.00' },
+                  ].map((planStep, idx) => (
+                    <div key={idx} className={styles.execNode}>
+                      <div className={styles.execStepNum}>{planStep.step}</div>
+                      <div className={styles.execType}>{planStep.type}</div>
+                      <div className={styles.execDetail}>{planStep.detail}</div>
+                      <div className={styles.execCost}>{planStep.cost}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 

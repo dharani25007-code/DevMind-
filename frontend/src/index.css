@@ -1,72 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:       #080810;
-  --bg2:      #0e0e1a;
-  --bg3:      #141424;
-  --card:     #111120;
-  --border:   rgba(255,255,255,0.06);
-  --border2:  rgba(255,255,255,0.12);
-  --border3:  rgba(255,255,255,0.2);
-  --text:     #e8e6f0;
-  --text2:    #8b89a8;
-  --text3:    #4a4868;
+  --bg:       #06060c;
+  --bg2:      #0c0d18;
+  --bg3:      #121424;
+  --bg-glass: rgba(18, 20, 36, 0.65);
+  --card:     #101222;
+  
+  --border:   rgba(255, 255, 255, 0.07);
+  --border2:  rgba(255, 255, 255, 0.14);
+  --border3:  rgba(255, 255, 255, 0.25);
+  
+  --text:     #f8fafc;
+  --text2:    #94a3b8;
+  --text3:    #475569;
 
-  --sql:      #38bdf8;
-  --sql-bg:   rgba(56,189,248,0.08);
-  --sql-bd:   rgba(56,189,248,0.2);
+  --sql:      #38bdf8; /* Sky 400 */
+  --sql-bg:   rgba(56, 189, 248, 0.12);
+  --sql-bd:   rgba(56, 189, 248, 0.3);
 
-  --git:      #a78bfa;
-  --git-bg:   rgba(167,139,250,0.08);
-  --git-bd:   rgba(167,139,250,0.2);
+  --git:      #a78bfa; /* Violet 400 */
+  --git-bg:   rgba(167, 139, 250, 0.12);
+  --git-bd:   rgba(167, 139, 250, 0.3);
 
-  --dsa:      #34d399;
-  --dsa-bg:   rgba(52,211,153,0.08);
-  --dsa-bd:   rgba(52,211,153,0.2);
+  --dsa:      #34d399; /* Emerald 400 */
+  --dsa-bg:   rgba(52, 211, 153, 0.12);
+  --dsa-bd:   rgba(52, 211, 153, 0.3);
 
-  --score:    #f59e0b;
-  --score-bg: rgba(245,158,11,0.08);
-  --score-bd: rgba(245,158,11,0.2);
+  --score:    #fbbf24; /* Amber 400 */
+  --score-bg: rgba(251, 191, 36, 0.12);
+  --score-bd: rgba(251, 191, 36, 0.3);
 
   --red:      #f87171;
-  --radius:   10px;
-  --radius-lg:16px;
+  --radius:   12px;
+  --radius-lg:20px;
 }
 
 body {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
+  background-image: 
+    radial-gradient(circle at 20% 0%, rgba(56, 189, 248, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 80% 100%, rgba(167, 139, 250, 0.06) 0%, transparent 40%);
   color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 code, pre, .mono {
   font-family: 'JetBrains Mono', monospace;
 }
 
-button { font-family: 'Space Grotesk', sans-serif; cursor: pointer; border: none; outline: none; }
-input, select, textarea { font-family: 'Space Grotesk', sans-serif; }
+button { 
+  font-family: 'Outfit', 'Inter', sans-serif; 
+  cursor: pointer; 
+  border: none; 
+  outline: none; 
+}
 
-::-webkit-scrollbar { width: 4px; height: 4px; }
+input, select, textarea { 
+  font-family: 'Outfit', 'Inter', sans-serif; 
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg2); }
-::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50%       { opacity: 1; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.5; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.8)); }
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-.fade-up { animation: fadeUp 0.4s ease forwards; }
+.fade-up { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
 .spinner {
   width: 16px; height: 16px;
